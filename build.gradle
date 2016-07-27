@@ -10,6 +10,10 @@ buildscript {
 	}
 }
 
+plugins {
+	id 'fi.jasoft.plugin.vaadin' version '0.11.0-beta'
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse-wtp'
 apply plugin: 'spring-boot'
@@ -22,6 +26,10 @@ war {
 }
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+
+eclipse.project { //for the Eclipse Gradle add-on
+	natures 'org.springsource.ide.eclipse.gradle.core.nature'
+}
 
 repositories {
 	mavenCentral()
