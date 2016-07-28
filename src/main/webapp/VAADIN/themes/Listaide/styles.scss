@@ -3,7 +3,7 @@
 
 /* This file prefixes all rules with the theme name to avoid causing conflicts with other themes. */
 /* The actual styles should be defined in listaide.scss */
-.listaide {
+.Listaide { /* was generated without capital L which didn't work */
   @include addons;
   @include listaide;
 }

@@ -17,11 +17,13 @@ import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.themes.ValoTheme;
 import com.xinra.listaide.service.AuthorizationService;
 import com.xinra.listaide.service.Service;
 import com.xinra.listaide.service.ServiceException;
 import com.xinra.listaide.service.ServiceProvider;
 import com.xinra.listaide.service.SpotifyService;
+import com.xinra.listaide.service.UserDTO;
 
 @SpringUI
 @Theme("Listaide")
@@ -37,6 +39,7 @@ public class ListaideUI extends UI{
 	
 	private Navigator navigator;
 	private Map<String, ListaideView> views;
+	private UserDTO user;
 
 	@Override
 	protected void init(VaadinRequest request){
@@ -61,7 +64,7 @@ public class ListaideUI extends UI{
 				}
 			} else { //If there is a session, try to attach it
 				try {
-					getService(SpotifyService.class).attachSession(sessionId);
+					user = getService(SpotifyService.class).attachSession(sessionId);
 					views.put(VIEW_MAIN, new ManagerView(this));
 				} catch (ServiceException e) {
 					//Ignore error message
@@ -81,7 +84,9 @@ public class ListaideUI extends UI{
 		
 		//header
 		HorizontalLayout header = new HorizontalLayout();
-		header.addComponent(new Label("ListAide"));
+		Label title = new Label("ListAide");
+		title.addStyleName(ValoTheme.LABEL_H1);
+		header.addComponent(title);
 		content.addComponent(header);
 		
 		//view port and navigator
