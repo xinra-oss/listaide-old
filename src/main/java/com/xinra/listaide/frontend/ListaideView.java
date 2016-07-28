@@ -11,6 +11,9 @@ public abstract class ListaideView extends VerticalLayout implements View {
 	
 	public ListaideView(ListaideUI ui) {
 		this.ui = ui;
+		this.setWidth("100%");
+		this.setMargin(true);
+		this.setSpacing(true);
 	}
 
 }

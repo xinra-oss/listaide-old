@@ -3,5 +3,21 @@
 @mixin listaide {
 	@include valo;
 
-	/* Add your theme selectors here */
+	.la-header {
+		@include valo-gradient(#585858);
+	}
+	
+	.la-appname {
+		color: #FFF;
+		background: none;
+		border: none;
+		font-size: 30px;
+		box-shadow: none;
+		height: auto;
+	}
+	
+	.la-footer {
+		@include valo-gradient(#e4e4e4);
+	}
+	
 }

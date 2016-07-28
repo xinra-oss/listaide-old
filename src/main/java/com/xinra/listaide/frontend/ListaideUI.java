@@ -13,6 +13,7 @@ import com.vaadin.navigator.Navigator;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
+import com.vaadin.ui.Button;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.UI;
@@ -81,22 +82,30 @@ public class ListaideUI extends UI{
 		//set up UI
 		Page.getCurrent().setTitle("ListAide for Spotify");
 		VerticalLayout content = new VerticalLayout();
+		content.setSizeFull();
 		
 		//header
 		HorizontalLayout header = new HorizontalLayout();
-		Label title = new Label("ListAide");
-		title.addStyleName(ValoTheme.LABEL_H1);
-		header.addComponent(title);
+		header.addStyleName(ListaideTheme.HEADER);
+		header.setWidth("100%");
+		Button appname = new Button("ListAide");
+		appname.addClickListener(e -> navigator.navigateTo(VIEW_MAIN));
+		appname.addStyleName(ListaideTheme.APPNAME);
+		header.addComponent(appname);
 		content.addComponent(header);
 		
 		//view port and navigator
 		VerticalLayout viewport = new VerticalLayout();
+		viewport.setWidth("100%");
 		content.addComponent(viewport);
+		content.setExpandRatio(viewport, 1); //use all available space -> sticky footer
 		navigator = new Navigator(this, viewport);
 		views.entrySet().forEach(e -> navigator.addView(e.getKey(), e.getValue()));
 		
 		//footer
 		HorizontalLayout footer = new HorizontalLayout();
+		footer.setWidth("100%");
+		footer.addStyleName(ListaideTheme.FOOTER);
 		footer.addComponent(new Label("footer"));
 		content.addComponent(footer);
 		

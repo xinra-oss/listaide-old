@@ -3,10 +3,12 @@ package com.xinra.listaide.frontend;
 import javax.servlet.http.Cookie;
 
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
-import com.vaadin.server.ExternalResource;
+import com.vaadin.server.Page;
 import com.vaadin.server.VaadinService;
+import com.vaadin.ui.Alignment;
+import com.vaadin.ui.Button;
 import com.vaadin.ui.Label;
-import com.vaadin.ui.Link;
+import com.vaadin.ui.themes.ValoTheme;
 import com.xinra.listaide.service.AuthorizationDTO;
 import com.xinra.listaide.service.AuthorizationService;
 
@@ -16,6 +18,7 @@ public class ConnectView extends ListaideView {
 
 	public ConnectView(ListaideUI ui, String redirectUri) {
 		super(ui);
+		
 		//Generate session id and auth url
 		AuthorizationDTO auth = ui.getService(AuthorizationService.class).beginAuthorization(redirectUri);
 
@@ -26,13 +29,20 @@ public class ConnectView extends ListaideView {
 		VaadinService.getCurrentResponse().addCookie(sessionCookie);
 		
 		//Display connect button		
-		Link link = new Link("Connect with Spotify", new ExternalResource(auth.getUrl()));
-		this.addComponent(link);
+		Button button = new Button("Connect with Spotify");
+		button.addStyleName(ValoTheme.BUTTON_HUGE);
+		button.addStyleName(ValoTheme.BUTTON_FRIENDLY);
+		button.addClickListener(e -> Page.getCurrent().setLocation(auth.getUrl()));
+		this.addComponent(button);
+		this.setComponentAlignment(button, Alignment.MIDDLE_CENTER);
 	}
 	
 	public ConnectView(ListaideUI ui, String redirectUri, String error) {
 		this(ui, redirectUri);
-		this.addComponent(new Label("Error: " + error), 0);
+		Label errorLabel = new Label(error);
+		errorLabel.addStyleName(ValoTheme.LABEL_LARGE);
+		errorLabel.addStyleName(ValoTheme.LABEL_FAILURE);
+		this.addComponentAsFirst(errorLabel);
 	}
 
 	@Override

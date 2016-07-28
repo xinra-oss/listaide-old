@@ -70,7 +70,11 @@ public class _AuthorizationServiceImpl implements AuthorizationService {
 	@Override
 	public void completeAuthorization(String sessionId, String state, String code, String redirectUri) throws ServiceException {
 		//Validate the state
-		if(!BCrypt.checkpw(sessionId, state)) {
+		try {
+			if(!BCrypt.checkpw(sessionId, state)) {
+				throw new Exception();
+			}
+		} catch(Exception e) {
 			throw new ServiceException("Invalid State");
 		}
 		
