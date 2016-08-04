@@ -26,4 +26,9 @@ public interface AuthorizationService extends Service {
 	 */
 	void completeAuthorization(String sessionId, String state, String code, String redirectUri) throws ServiceException;
 	
+	/**
+	 * Destroys a session.
+	 * @param sessionId id of the session to be destroyed
+	 */
+	void destroySession(String sessionId);
 }

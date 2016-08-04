@@ -8,3 +8,5 @@ bin/
 src/main/resources/application.properties
 src/main/webapp/VAADIN/themes/Listaide/*.css
 src/main/webapp/VAADIN/themes/Listaide/*.cache
+src/main/webapp/VAADIN/gwt-unitCache/
+src/main/webapp/VAADIN/widgetsets/

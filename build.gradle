@@ -4,21 +4,24 @@ buildscript {
 	}
 	repositories {
 		mavenCentral()
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+		classpath "fi.jasoft.plugin:gradle-vaadin-plugin:0.11.1"
 	}
-}
-
-plugins {
-	id 'fi.jasoft.plugin.vaadin' version '0.11.0-beta'
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse-wtp'
 apply plugin: 'spring-boot'
 apply plugin: 'war'
+apply plugin: "fi.jasoft.plugin.vaadin"
 
+//widgetset management doesn't work. It just resets the widgetset but doesn't add the add-ons.
+vaadinCompile.manageWidgetset = false
 
 war {
 	baseName = 'listaide'
@@ -33,6 +36,10 @@ eclipse.project { //for the Eclipse Gradle add-on
 
 repositories {
 	mavenCentral()
+	maven {
+		url "http://maven.vaadin.com/vaadin-addons"
+		url "https://plugins.gradle.org/m2/" //shouldn't be needed here, but somehow the vaadin plugin doesn't work otherwise o.O
+    }
 }
 
 configurations {
@@ -49,6 +56,7 @@ dependencies {
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	
 	compile 'se.michaelthelin.spotify:spotify-web-api-java:1.5.0'
+	compile 'org.vaadin.addons:popupbutton:2.6.0'
 }
 
 dependencyManagement {

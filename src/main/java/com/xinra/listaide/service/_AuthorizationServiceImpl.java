@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
@@ -93,6 +94,15 @@ public class _AuthorizationServiceImpl implements AuthorizationService {
 			sessionRepo.save(session);
 		} catch (IOException | WebApiException e) {
 			throw new ServiceException(e);
+		}
+	}
+
+	@Override
+	public void destroySession(String sessionId) {
+		try {
+			sessionRepo.delete(sessionId);
+		} catch (EmptyResultDataAccessException e) {
+			//ignore if session id does not exist
 		}
 	}
 

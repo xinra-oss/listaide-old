@@ -5,10 +5,13 @@
 
 	.la-header {
 		@include valo-gradient(#585858);
+		
+		.v-button {
+			color: #FFF;
+		}
 	}
 	
 	.la-appname {
-		color: #FFF;
 		background: none;
 		border: none;
 		font-size: 30px;

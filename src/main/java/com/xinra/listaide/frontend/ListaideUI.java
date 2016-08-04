@@ -7,12 +7,17 @@ import java.util.Map;
 import javax.servlet.http.Cookie;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.vaadin.hene.popupbutton.PopupButton;
 
 import com.vaadin.annotations.Theme;
+import com.vaadin.annotations.Widgetset;
 import com.vaadin.navigator.Navigator;
+import com.vaadin.server.FontAwesome;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.spring.annotation.SpringUI;
+import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
@@ -28,12 +33,16 @@ import com.xinra.listaide.service.UserDTO;
 
 @SpringUI
 @Theme("Listaide")
+@Widgetset("addon.client.ListaideWidgetset")
 public class ListaideUI extends UI{
 	
 	private static final long serialVersionUID = 1L;
 	
 	public static final String SESSION_COOKIE = "listaide-session-id";
 	public static final String VIEW_MAIN = "";
+	
+	@Value("${listaide.baseurl}")
+	String baseUrl;
 	
 	@Autowired
 	private ServiceProvider serviceProvider;
@@ -45,7 +54,6 @@ public class ListaideUI extends UI{
 	@Override
 	protected void init(VaadinRequest request){
 		views = new HashMap<>();
-		String baseUrl = "http://localhost:8080";
 		
 		//Retrieve session id
 		String sessionId = null;
@@ -81,8 +89,8 @@ public class ListaideUI extends UI{
 		
 		//set up UI
 		Page.getCurrent().setTitle("ListAide for Spotify");
-		VerticalLayout content = new VerticalLayout();
-		content.setSizeFull();
+		VerticalLayout layout = new VerticalLayout();
+		layout.setSizeFull();
 		
 		//header
 		HorizontalLayout header = new HorizontalLayout();
@@ -92,14 +100,31 @@ public class ListaideUI extends UI{
 		appname.addClickListener(e -> navigator.navigateTo(VIEW_MAIN));
 		appname.addStyleName(ListaideTheme.APPNAME);
 		header.addComponent(appname);
-		content.addComponent(header);
+		layout.addComponent(header);
 		
-		//view port and navigator
-		VerticalLayout viewport = new VerticalLayout();
-		viewport.setWidth("100%");
-		content.addComponent(viewport);
-		content.setExpandRatio(viewport, 1); //use all available space -> sticky footer
-		navigator = new Navigator(this, viewport);
+		//user info if applicable
+		if(user != null) {
+			PopupButton userBtn = new PopupButton(user.getId());
+			userBtn.setIcon(FontAwesome.USER);
+			userBtn.addStyleName(ValoTheme.BUTTON_BORDERLESS);
+			final String finalSessionId = sessionId; //for use in lambda expression
+			ContextMenu userMenu = new ContextMenu(
+					new ContextMenu.Entry("Log out", e -> {
+						getService(AuthorizationService.class).destroySession(finalSessionId);
+						getPage().setLocation(baseUrl); //reload
+					})
+			);
+			userBtn.setContent(userMenu);
+			header.addComponent(userBtn);
+			header.setComponentAlignment(userBtn, Alignment.MIDDLE_RIGHT);
+		}
+		
+		//content area and navigator
+		VerticalLayout content = new VerticalLayout();
+		content.setWidth("100%");
+		layout.addComponent(content);
+		layout.setExpandRatio(content, 1); //use all available space -> sticky footer
+		navigator = new Navigator(this, content);
 		views.entrySet().forEach(e -> navigator.addView(e.getKey(), e.getValue()));
 		
 		//footer
@@ -107,9 +132,9 @@ public class ListaideUI extends UI{
 		footer.setWidth("100%");
 		footer.addStyleName(ListaideTheme.FOOTER);
 		footer.addComponent(new Label("footer"));
-		content.addComponent(footer);
+		layout.addComponent(footer);
 		
-		setContent(content);
+		setContent(layout);
 	}
 	
 	/**
