@@ -11,7 +11,6 @@ import com.wrapper.spotify.exceptions.WebApiException;
 import com.wrapper.spotify.models.User;
 import com.xinra.listaide.entity.Session;
 import com.xinra.listaide.entity.SessionRepository;
-import com.xinra.listaide.spotify.ListaideApi;
 
 @Service
 public class _SpotifyServiceImpl implements SpotifyService {
@@ -23,7 +22,6 @@ public class _SpotifyServiceImpl implements SpotifyService {
 	DTOFactory dtoFactory;
 	
 	private Api api;
-	private ListaideApi lapi;
 	private User user;
 	
 	protected void validateSession() throws ServiceException {
@@ -42,8 +40,6 @@ public class _SpotifyServiceImpl implements SpotifyService {
 				.refreshToken(session.getRefreshToken())
 				.build();
 		
-	    lapi = new ListaideApi(api);
-	    
 	    //Update the session
 	    session.setLastUsed(new Date());
 	    sessionRepo.save(session);

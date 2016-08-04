@@ -39,7 +39,11 @@ repositories {
 	maven {
 		url "http://maven.vaadin.com/vaadin-addons"
 		url "https://plugins.gradle.org/m2/" //shouldn't be needed here, but somehow the vaadin plugin doesn't work otherwise o.O
-    }
+	}
+	flatDir {
+		//dirs 'lib'
+		dirs '../spotify-web-api-java/target'
+	}
 }
 
 configurations {
@@ -55,7 +59,8 @@ dependencies {
 	providedRuntime('org.springframework.boot:spring-boot-starter-tomcat')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	
-	compile 'se.michaelthelin.spotify:spotify-web-api-java:1.5.0'
+	//compile 'se.michaelthelin.spotify:spotify-web-api-java:1.5.0'
+	compile name: 'spotify-web-api-java-1.5.0-CUSTOM'
 	compile 'org.vaadin.addons:popupbutton:2.6.0'
 }
 
