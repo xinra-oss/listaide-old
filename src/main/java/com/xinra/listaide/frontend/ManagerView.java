@@ -19,7 +19,7 @@ public class ManagerView extends ListaideView {
 
 	@Override
 	public void enter(ViewChangeEvent event) {
-				
+		
 	}
 
 }

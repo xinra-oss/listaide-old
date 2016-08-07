@@ -23,6 +23,7 @@ public class _SpotifyServiceImpl implements SpotifyService {
 	
 	private Api api;
 	private User user;
+	private String playlistsEtag;
 	
 	protected void validateSession() throws ServiceException {
 		if(api == null) throw new ServiceException("No session has been attached to the SpotifyService!");
@@ -50,6 +51,8 @@ public class _SpotifyServiceImpl implements SpotifyService {
 		} catch (IOException | WebApiException e) {
 			throw new ServiceException(e);
 		}
+	    
+	    playlistsEtag = session.getPlaylistsEtag();
 	    
 	    //return DTO
 	    UserDTO dto = dtoFactory.createDTO(UserDTO.class);

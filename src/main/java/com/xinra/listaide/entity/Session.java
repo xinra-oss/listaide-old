@@ -6,7 +6,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
 
 @Entity
 public class Session {
@@ -14,15 +13,14 @@ public class Session {
 	@Id
 	private String sessionId;
 	
-	@NotNull
 	private String accessToken;
 	
-	@NotNull
 	private String refreshToken;
 	
-	@NotNull
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date lastUsed;
+	
+	private String playlistsEtag;
 	
 	protected Session() {}
 
@@ -63,5 +61,13 @@ public class Session {
 
 	public void setLastUsed(Date lastUsed) {
 		this.lastUsed = lastUsed;
+	}
+
+	public String getPlaylistsEtag() {
+		return playlistsEtag;
+	}
+
+	public void setPlaylistsEtag(String playlistsEtag) {
+		this.playlistsEtag = playlistsEtag;
 	}
 }
