@@ -57,6 +57,10 @@ public class _SpotifyServiceImpl implements SpotifyService {
 	    //return DTO
 	    UserDTO dto = dtoFactory.createDTO(UserDTO.class);
 	    dto.setId(user.getId());
+	    dto.setUrl(user.getExternalUrls().get("spotify"));
+	    if(user.getImages().size() > 0) {
+	    	dto.setImageUrl(user.getImages().get(0).getUrl());
+	    }
 	    return dto;
 	}
 }

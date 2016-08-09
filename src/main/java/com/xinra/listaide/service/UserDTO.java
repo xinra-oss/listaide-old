@@ -1,10 +1,10 @@
 package com.xinra.listaide.service;
 
-public interface UserDTO extends DTO {
+public interface UserDTO extends IdentifiableSpotifyDTO {
 
-	public static final String Id = "id";
+	static final String ImageUrl = "imageUrl";
 	
-	String getId();
-	void setId(String id);
+	String getImageUrl();
+	void setImageUrl(String imageUrl);
 	
 }
