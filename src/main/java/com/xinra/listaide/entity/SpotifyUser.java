@@ -3,7 +3,7 @@ package com.xinra.listaide.entity;
 import javax.persistence.Embeddable;
 
 @Embeddable
-public class SpotifyUser extends IdentifiableSpotifyEntity {
+public class SpotifyUser extends IdentifiableSpotifyEmbeddable {
 	
 	private String imageUrl;
 	
