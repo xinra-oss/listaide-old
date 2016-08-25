@@ -13,8 +13,11 @@ import org.springframework.stereotype.Service;
 import com.wrapper.spotify.Api;
 import com.wrapper.spotify.exceptions.WebApiException;
 import com.wrapper.spotify.models.AuthorizationCodeCredentials;
+import com.wrapper.spotify.models.User;
+import com.xinra.listaide.entity.ListaideUser;
 import com.xinra.listaide.entity.Session;
 import com.xinra.listaide.entity.SessionRepository;
+import com.xinra.listaide.entity.UserRepository;
 
 @Service
 public class _AuthorizationServiceImpl implements AuthorizationService {
@@ -30,6 +33,9 @@ public class _AuthorizationServiceImpl implements AuthorizationService {
 	
 	@Autowired
 	private SessionRepository sessionRepo;
+	
+	@Autowired
+	private UserRepository userRepo;
 	
 	@Override
 	public AuthorizationDTO beginAuthorization(String redirectUri) {
@@ -89,8 +95,23 @@ public class _AuthorizationServiceImpl implements AuthorizationService {
 		try {
 			AuthorizationCodeCredentials creds = api.authorizationCodeGrant(code).build().get();
 			
+			//Now the session must be connected to the current user
+			api = Api.builder()
+				.accessToken(creds.getAccessToken())
+				.refreshToken(creds.getRefreshToken())
+				.build();
+			
+			User user = api.getMe().build().get();
+			ListaideUser luser = userRepo.findOne(user.getId());
+			
+			//If the user doesn't exist, create it
+			if(luser == null) {
+				luser = new ListaideUser(user.getId(), creds.getAccessToken(), creds.getRefreshToken());
+				luser = userRepo.save(luser);
+			}
+			
 			//Save session to database
-			Session session = new Session(sessionId, creds.getAccessToken(), creds.getRefreshToken());
+			Session session = new Session(sessionId, luser);
 			sessionRepo.save(session);
 		} catch (IOException | WebApiException e) {
 			throw new ServiceException(e);

@@ -73,7 +73,7 @@ public class ListaideUI extends UI{
 				}
 			} else { //If there is a session, try to attach it
 				try {
-					user = getService(SpotifyService.class).attachSession(sessionId);
+					user = getService(SpotifyService.class).attachSession(sessionId, true);
 					views.put(VIEW_MAIN, new ManagerView(this));
 				} catch (ServiceException e) {
 					//Ignore error message

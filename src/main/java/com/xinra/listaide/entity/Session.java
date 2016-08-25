@@ -2,8 +2,10 @@ package com.xinra.listaide.entity;
 
 import java.util.Date;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
@@ -13,21 +15,17 @@ public class Session {
 	@Id
 	private String sessionId;
 	
-	private String accessToken;
-	
-	private String refreshToken;
-	
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date lastUsed;
 	
-	private String playlistsEtag;
+	@ManyToOne(cascade = CascadeType.PERSIST)
+	private ListaideUser user;
 	
 	protected Session() {}
 
-	public Session(String sessionId, String accessToken, String refreshToken) {
+	public Session(String sessionId, ListaideUser user) {
 		this.sessionId = sessionId;
-		this.accessToken = accessToken;
-		this.refreshToken = refreshToken;
+		this.user = user;
 		this.lastUsed = new Date();
 	}
 
@@ -39,22 +37,6 @@ public class Session {
 		this.sessionId = sessionId;
 	}
 
-	public String getAccessToken() {
-		return accessToken;
-	}
-
-	public void setAccessToken(String accessToken) {
-		this.accessToken = accessToken;
-	}
-
-	public String getRefreshToken() {
-		return refreshToken;
-	}
-
-	public void setRefreshToken(String refreshToken) {
-		this.refreshToken = refreshToken;
-	}
-
 	public Date getLastUsed() {
 		return lastUsed;
 	}
@@ -63,11 +45,11 @@ public class Session {
 		this.lastUsed = lastUsed;
 	}
 
-	public String getPlaylistsEtag() {
-		return playlistsEtag;
+	public ListaideUser getUser() {
+		return user;
 	}
 
-	public void setPlaylistsEtag(String playlistsEtag) {
-		this.playlistsEtag = playlistsEtag;
+	public void setUser(ListaideUser user) {
+		this.user = user;
 	}
 }

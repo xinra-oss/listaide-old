@@ -5,12 +5,14 @@ import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 @Entity
 public class SpotifyPlaylist extends IdentifiableSpotifyEntity {
 	
-	private String userId;
+	@ManyToOne
+	private ListaideUser user;
 	private String etag;
 	private boolean collaborative;
 	private String description;
@@ -29,6 +31,14 @@ public class SpotifyPlaylist extends IdentifiableSpotifyEntity {
 	
 	@ManyToMany(cascade=CascadeType.ALL)
 	private List<SpotifyPlaylist> children;
+	
+	public ListaideUser getUser() {
+		return user;
+	}
+	
+	public void setUser(ListaideUser user) {
+		this.user = user;
+	}
 
 	public String getEtag() {
 		return etag;
@@ -101,12 +111,6 @@ public class SpotifyPlaylist extends IdentifiableSpotifyEntity {
 	}
 	public void setChildren(List<SpotifyPlaylist> children) {
 		this.children = children;
-	}
-	public String getUserId() {
-		return userId;
-	}
-	public void setUserId(String userId) {
-		this.userId = userId;
 	}
 
 }

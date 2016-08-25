@@ -31,4 +31,5 @@ public interface AuthorizationService extends Service {
 	 * @param sessionId id of the session to be destroyed
 	 */
 	void destroySession(String sessionId);
+	
 }
