@@ -14,7 +14,6 @@ import com.wrapper.spotify.exceptions.NotModifiedException;
 import com.wrapper.spotify.exceptions.WebApiException;
 import com.wrapper.spotify.methods.UserPlaylistsRequest;
 import com.wrapper.spotify.models.Page;
-import com.wrapper.spotify.models.RefreshAccessTokenCredentials;
 import com.wrapper.spotify.models.SimplePlaylist;
 import com.wrapper.spotify.models.User;
 import com.xinra.listaide.entity.ListaideUser;
