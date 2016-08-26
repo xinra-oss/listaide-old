@@ -1,6 +1,6 @@
 package com.xinra.listaide.entity;
 
-import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -24,13 +24,13 @@ public class SpotifyPlaylist extends IdentifiableSpotifyEntity {
 	private String tracksEtag;
 	
 	@OneToMany(cascade=CascadeType.ALL, orphanRemoval=true)
-	private List<SpotifyTrack> tracks;
+	private Set<SpotifyTrack> tracks;
 	
 	@ManyToMany(mappedBy="children", cascade=CascadeType.ALL)
-	private List<SpotifyPlaylist> parents;
+	private Set<SpotifyPlaylist> parents;
 	
 	@ManyToMany(cascade=CascadeType.ALL)
-	private List<SpotifyPlaylist> children;
+	private Set<SpotifyPlaylist> children;
 	
 	public ListaideUser getUser() {
 		return user;
@@ -82,10 +82,10 @@ public class SpotifyPlaylist extends IdentifiableSpotifyEntity {
 	public void setPublicAccess(boolean publicAccess) {
 		this.publicAccess = publicAccess;
 	}
-	public List<SpotifyTrack> getTracks() {
+	public Set<SpotifyTrack> getTracks() {
 		return tracks;
 	}
-	public void setTracks(List<SpotifyTrack> tracks) {
+	public void setTracks(Set<SpotifyTrack> tracks) {
 		this.tracks = tracks;
 	}
 	public String getTracksEtag() {
@@ -100,16 +100,16 @@ public class SpotifyPlaylist extends IdentifiableSpotifyEntity {
 	public void setFollowers(int followers) {
 		this.followers = followers;
 	}
-	public List<SpotifyPlaylist> getParents() {
+	public Set<SpotifyPlaylist> getParents() {
 		return parents;
 	}
-	public void setParents(List<SpotifyPlaylist> parents) {
+	public void setParents(Set<SpotifyPlaylist> parents) {
 		this.parents = parents;
 	}
-	public List<SpotifyPlaylist> getChildren() {
+	public Set<SpotifyPlaylist> getChildren() {
 		return children;
 	}
-	public void setChildren(List<SpotifyPlaylist> children) {
+	public void setChildren(Set<SpotifyPlaylist> children) {
 		this.children = children;
 	}
 

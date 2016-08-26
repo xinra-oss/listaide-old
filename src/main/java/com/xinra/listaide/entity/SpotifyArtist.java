@@ -11,6 +11,7 @@ public class SpotifyArtist extends SpotifyEntity {
 	@GeneratedValue
 	private long id;
 	private String name;
+	private int number;
 	
 	public String getName() {
 		return name;
@@ -23,6 +24,12 @@ public class SpotifyArtist extends SpotifyEntity {
 	}
 	public void setId(long id) {
 		this.id = id;
+	}
+	public int getNumber() {
+		return number;
+	}
+	public void setNumber(int number) {
+		this.number = number;
 	}
 
 }

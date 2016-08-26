@@ -3,25 +3,35 @@ package com.xinra.listaide.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wrapper.spotify.Api;
 import com.wrapper.spotify.exceptions.NotModifiedException;
 import com.wrapper.spotify.exceptions.WebApiException;
+import com.wrapper.spotify.methods.PlaylistTracksRequest;
 import com.wrapper.spotify.methods.UserPlaylistsRequest;
 import com.wrapper.spotify.models.Page;
+import com.wrapper.spotify.models.PlaylistTrack;
+import com.wrapper.spotify.models.SimpleArtist;
 import com.wrapper.spotify.models.SimplePlaylist;
 import com.wrapper.spotify.models.User;
 import com.xinra.listaide.entity.ListaideUser;
+import com.xinra.listaide.entity.PlaylistRepository;
 import com.xinra.listaide.entity.Session;
 import com.xinra.listaide.entity.SessionRepository;
+import com.xinra.listaide.entity.SpotifyAlbum;
+import com.xinra.listaide.entity.SpotifyArtist;
 import com.xinra.listaide.entity.SpotifyPlaylist;
-import com.xinra.listaide.entity.SpotifyPlaylistRepository;
+import com.xinra.listaide.entity.SpotifyTrack;
 import com.xinra.listaide.entity.SpotifyUser;
+import com.xinra.listaide.entity.TrackRepository;
 import com.xinra.listaide.entity.UserRepository;
 
 @Service
@@ -31,10 +41,13 @@ public class _SpotifyServiceImpl implements SpotifyService {
 	SessionRepository sessionRepo;
 	
 	@Autowired
-	SpotifyPlaylistRepository playlistRepo;
+	PlaylistRepository playlistRepo;
 	
 	@Autowired
 	private UserRepository userRepo;
+	
+	@Autowired
+	private TrackRepository trackRepo;
 	
 	@Autowired
 	DTOFactory dtoFactory;
@@ -102,11 +115,13 @@ public class _SpotifyServiceImpl implements SpotifyService {
 	}
 
 	@Override
+	@Transactional
 	public void synchronize() throws ServiceException {
 		requireSession();
 		
 		try {
 			synchronizePlaylists();
+			synchronizeTracks();
 		} catch (IOException | WebApiException e) {
 			throw new ServiceException(e);
 		} 
@@ -165,8 +180,72 @@ public class _SpotifyServiceImpl implements SpotifyService {
 		});
 	}
 	
+	private void synchronizeTracks() throws IOException, WebApiException {
+		for(SpotifyPlaylist playlist : playlistRepo.findByUserId(user.getId())) {
+			List<PlaylistTrack> tracks = new ArrayList<>();
+			try {
+				int offset = 0;
+				while(true) {
+					PlaylistTracksRequest.Builder builder = api.getPlaylistTracks(user.getId(), playlist.getId())
+							.offset(offset);
+					if(playlist.getTracksEtag() != null) builder.header("If-None-Match", playlist.getTracksEtag());
+					
+					Page<PlaylistTrack> page = builder.build().get();
+					tracks.addAll(page.getItems());
+					offset += page.getItems().size();
+					if(offset >=  page.getTotal()) {
+						//update etag after last iteration
+
+						playlist = playlistRepo.save(playlist);
+						break;
+					}
+				}
+			} catch (NotModifiedException e) {
+				e.printStackTrace();
+				return; //cache is still valid
+			}
+			
+			//update track cache
+			List<SpotifyTrack> processed = new ArrayList<>(tracks.size());
+			int i = 1;
+			for(PlaylistTrack track : tracks) {
+				try {
+					SpotifyTrack current = playlist.getTracks().stream()
+							.filter(st -> st.getTrackId().equals(track.getTrack().getId())
+									&& track.getAddedAt().equals(st.getAddedAt()) //other way round doesn't work...
+									&& st.getAddedBy().getId().equals(track.getAddedBy().getId()))
+							.findFirst().get();
+					//If the same user added the same track at the same time, only the first occurrence
+					//is updated, subsequent ones are dropped and recreated
+					if(processed.contains(current)) throw new NoSuchElementException();
+					//Don't actually update the entity, only update ordering
+					current.setNumber(i);
+					processed.add(current);
+				} catch(NoSuchElementException e) {
+					//there is no entity for this track -> create one
+					SpotifyTrack newTrack = toEntity(track, null);
+					newTrack.setNumber(i);
+					trackRepo.save(newTrack);
+					playlist.getTracks().add(newTrack);
+					processed.add(newTrack);
+				}
+				i++;
+			}
+			
+			//remove deleted tracks from cache
+			//playlist.setTracks(processed); doesn't work because Hibernate's 
+			//orphan-removal wouldn't recognize this correctly
+			playlist.getTracks().removeIf(t -> !processed.contains(t));
+			
+			playlistRepo.save(playlist);
+		}
+	}
+	
 	private SpotifyPlaylist toEntity(SimplePlaylist source, SpotifyPlaylist target) {
-		if(target == null) target = new SpotifyPlaylist();
+		if(target == null) {
+			target = new SpotifyPlaylist();
+			target.setTracks(new HashSet<>());
+		}
 		target.setId(source.getId());
 		target.setCollaborative(source.isCollaborative());
 		target.setName(source.getName());
@@ -178,6 +257,35 @@ public class _SpotifyServiceImpl implements SpotifyService {
 		if(source.getOwner().getImages() != null && !source.getOwner().getImages().isEmpty()) {
 			target.getOwner().setImageUrl(source.getOwner().getImages().get(0).getUrl());
 		}
+		return target;
+	}
+	
+	private SpotifyTrack toEntity(PlaylistTrack source, SpotifyTrack target) {
+		if(target == null) target = new SpotifyTrack();
+		target.setAddedAt(source.getAddedAt());
+		if(target.getAddedBy() == null) target.setAddedBy(new SpotifyUser());
+		target.getAddedBy().setId(source.getAddedBy().getId());
+		target.getAddedBy().setUrl(source.getAddedBy().getExternalUrls().get("spotify"));
+		if(source.getAddedBy().getImages() != null) {
+			target.getAddedBy().setImageUrl(source.getAddedBy().getImages().get(0).getUrl());
+		}
+		target.setTrackId(source.getTrack().getId());
+		if(target.getAlbum() == null) target.setAlbum(new SpotifyAlbum());
+		target.getAlbum().setName(source.getTrack().getAlbum().getName());
+		target.getAlbum().setUrl(source.getTrack().getAlbum().getExternalUrls().get("spotify"));
+		if(target.getArtists() == null) target.setArtists(new HashSet<>());
+		else target.getArtists().clear();
+		int i = 1;
+		for(SimpleArtist a : source.getTrack().getArtists()) {
+			SpotifyArtist artist = new SpotifyArtist();
+			artist.setName(a.getName());
+			artist.setUrl(a.getExternalUrls().get("spotify"));
+			artist.setNumber(i);
+			target.getArtists().add(artist);
+			i++;
+		}
+		target.setDuration(source.getTrack().getDuration());
+		target.setName(source.getTrack().getName());
 		return target;
 	}
 }

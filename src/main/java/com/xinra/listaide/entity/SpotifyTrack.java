@@ -1,22 +1,34 @@
 package com.xinra.listaide.entity;
 
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 @Entity
-public class SpotifyTrack extends IdentifiableSpotifyEntity {
+public class SpotifyTrack extends SpotifyEntity {
+	
+	//needed because the same track can exist multiple times
+	//for faster read operations
+	@Id
+	@GeneratedValue
+	private long id;
+	
+	//actually these 3 are kind of a composite key
+	//in terms of business logic
+	private String trackId;
+	private Date addedAt;
+	private SpotifyUser addedBy;
 	
 	private SpotifyAlbum album;
 	@OneToMany(cascade=CascadeType.ALL, orphanRemoval=true)
-	private List<SpotifyArtist> artists;
+	private Set<SpotifyArtist> artists;
 	private int duration;
 	private String name;
-	private Date addedAt;
-	private SpotifyUser addedBy;
 	private int number;
 	
 	public SpotifyAlbum getAlbum() {
@@ -25,10 +37,10 @@ public class SpotifyTrack extends IdentifiableSpotifyEntity {
 	public void setAlbum(SpotifyAlbum album) {
 		this.album = album;
 	}
-	public List<SpotifyArtist> getArtists() {
+	public Set<SpotifyArtist> getArtists() {
 		return artists;
 	}
-	public void setArtists(List<SpotifyArtist> artists) {
+	public void setArtists(Set<SpotifyArtist> artists) {
 		this.artists = artists;
 	}
 	public int getDuration() {
@@ -60,5 +72,17 @@ public class SpotifyTrack extends IdentifiableSpotifyEntity {
 	}
 	public void setNumber(int number) {
 		this.number = number;
+	}
+	public long getId() {
+		return id;
+	}
+	public void setId(long id) {
+		this.id = id;
+	}
+	public String getTrackId() {
+		return trackId;
+	}
+	public void setTrackId(String trackId) {
+		this.trackId = trackId;
 	}
 }
