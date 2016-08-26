@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -195,13 +194,12 @@ public class _SpotifyServiceImpl implements SpotifyService {
 					offset += page.getItems().size();
 					if(offset >=  page.getTotal()) {
 						//update etag after last iteration
-
+						playlist.setTracksEtag(page.getEtag());
 						playlist = playlistRepo.save(playlist);
 						break;
 					}
 				}
 			} catch (NotModifiedException e) {
-				e.printStackTrace();
 				return; //cache is still valid
 			}
 			
