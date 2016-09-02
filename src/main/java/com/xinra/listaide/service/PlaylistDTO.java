@@ -1,6 +1,7 @@
 package com.xinra.listaide.service;
 
 import java.util.List;
+import java.util.Set;
 
 public interface PlaylistDTO extends IdentifiableSpotifyDTO {
 	
@@ -15,7 +16,7 @@ public interface PlaylistDTO extends IdentifiableSpotifyDTO {
 	static final String Parents = "parents";
 	static final String Children = "children";
 	
-	Boolean isCollaborative();
+	Boolean getCollaborative();
 	void setCollaborative(Boolean collaborative);
 	
 	String getDescription();
@@ -39,10 +40,10 @@ public interface PlaylistDTO extends IdentifiableSpotifyDTO {
 	List<TrackDTO> getTracks();
 	void setTracks(List<TrackDTO> tracks);
 	
-	List<PlaylistDTO> getParents();
-	void setParents(List<PlaylistDTO> parents);
+	Set<PlaylistDTO> getParents();
+	void setParents(Set<PlaylistDTO> parents);
 	
-	List<PlaylistDTO> getChildren();
-	void setChildren(List<PlaylistDTO> children);
+	Set<PlaylistDTO> getChildren();
+	void setChildren(Set<PlaylistDTO> children);
 
 }

@@ -14,4 +14,7 @@ public class ListaideTheme {
 	
 	public static final String FOOTER = "la-footer";
 	
+	/** Centers checkboxes vertically compensating for not having a separate caption */
+	public static final String CHECKBOX_ALIGNMENT = "la-checkbox-alignment";
+	
 }

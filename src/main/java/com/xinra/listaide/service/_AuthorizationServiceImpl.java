@@ -107,8 +107,11 @@ public class _AuthorizationServiceImpl implements AuthorizationService {
 			//If the user doesn't exist, create it
 			if(luser == null) {
 				luser = new ListaideUser(user.getId(), creds.getAccessToken(), creds.getRefreshToken());
-				luser = userRepo.save(luser);
 			}
+			
+			luser.setAccessToken(creds.getAccessToken());
+			luser.setRefreshToken(creds.getAccessToken());
+			luser = userRepo.save(luser);
 			
 			//Save session to database
 			Session session = new Session(sessionId, luser);

@@ -8,9 +8,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface PlaylistRepository extends CrudRepository<SpotifyPlaylist, String> {
 
-	List<SpotifyPlaylist> findByUserId(String userId);
+	@Query("SELECT DISTINCT p FROM SpotifyPlaylist p LEFT JOIN FETCH p.parentIds WHERE p.user.id = :userId")
+	List<SpotifyPlaylist> findByUserId(@Param("userId") String userId);
 	
-	@Query("SELECT DISTINCT p FROM SpotifyPlaylist p INNER JOIN FETCH p.tracks t INNER JOIN FETCH t.artists WHERE p.user.id = :userId")
+	@Query("SELECT DISTINCT p FROM SpotifyPlaylist p LEFT JOIN FETCH p.parentIds LEFT JOIN FETCH p.tracks t LEFT JOIN FETCH t.artists WHERE p.user.id = :userId")
 	List<SpotifyPlaylist> findByUserIdEagerly(@Param("userId") String userId);
 	
 }

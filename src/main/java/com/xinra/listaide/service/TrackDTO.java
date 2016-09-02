@@ -3,7 +3,7 @@ package com.xinra.listaide.service;
 import java.util.Date;
 import java.util.List;
 
-public interface TrackDTO {
+public interface TrackDTO extends DTO {
 	
 	static final String Album = "album";
 	static final String Artists = "artists";

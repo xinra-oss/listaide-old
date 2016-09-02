@@ -3,9 +3,12 @@ package com.xinra.listaide.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -251,6 +254,7 @@ public class _SpotifyServiceImpl implements SpotifyService {
 		target.setUrl(source.getExternalUrls().get("spotify"));
 		target.setImageUrl(source.getImages().get(0).getUrl());
 		if(target.getOwner() == null) target.setOwner(new SpotifyUser());
+		target.getOwner().setId(source.getOwner().getId());
 		target.getOwner().setUrl(source.getOwner().getExternalUrls().get("spotify"));
 		if(source.getOwner().getImages() != null && !source.getOwner().getImages().isEmpty()) {
 			target.getOwner().setImageUrl(source.getOwner().getImages().get(0).getUrl());
@@ -285,5 +289,71 @@ public class _SpotifyServiceImpl implements SpotifyService {
 		target.setDuration(source.getTrack().getDuration());
 		target.setName(source.getTrack().getName());
 		return target;
+	}
+	
+	private UserDTO toDTO(SpotifyUser source) {
+		UserDTO target = dtoFactory.createDTO(UserDTO.class);
+		target.setId(source.getId());
+		target.setImageUrl(source.getImageUrl());
+		target.setUrl(source.getUrl());
+		return target;
+	}
+	
+	private PlaylistDTO toDTO(SpotifyPlaylist source) {
+		PlaylistDTO target = dtoFactory.createDTO(PlaylistDTO.class);
+		target.setCollaborative(source.isCollaborative());
+		target.setDescription(source.getDescription());
+		target.setFollowers(source.getFollowers());
+		target.setId(source.getId());
+		target.setImageUrl(source.getImageUrl());
+		target.setName(source.getName());
+		target.setOwner(toDTO(source.getOwner()));
+		target.setPublicAccess(source.isPublicAccess());
+		target.setUrl(source.getUrl());
+		//have to be added afterwards
+		target.setChildren(new HashSet<>());
+		target.setParents(new HashSet<>());
+		//tracks are not added as they are fetched lazily
+		return target;
+	}
+	
+	private TrackDTO toDTO(SpotifyTrack source) {
+		TrackDTO target = dtoFactory.createDTO(TrackDTO.class);
+		
+		return target;
+	}
+
+	@Override
+	public List<PlaylistDTO> getPlaylists(String userId) {
+		List<SpotifyPlaylist> playlists = playlistRepo.findByUserId(userId);
+		Map<String, PlaylistDTO> playlistDTOs = new HashMap<>();
+		
+		//map to DTO
+		playlists.forEach(p -> playlistDTOs.put(p.getId(), toDTO(p)));
+		
+		//set child/parent relations
+		playlists.forEach(playlist -> {
+//			playlist.getChildren().forEach(c -> playlistDTOs.get(playlist.getId())
+//					.getChildren().add(playlistDTOs.get(c.getId())));
+//			playlist.getParents().forEach(c -> playlistDTOs.get(playlist.getId())
+//					.getParents().add(playlistDTOs.get(c.getId())));
+			PlaylistDTO playlistDTO = playlistDTOs.get(playlist.getId());
+			playlist.getParentIds().stream()
+				.map(playlistDTOs::get)
+				.forEach(parentDTO -> {
+					playlistDTO.getParents().add(parentDTO);
+					parentDTO.getChildren().add(playlistDTO);
+			});
+		});
+		
+		return new ArrayList<>(playlistDTOs.values());
+	}
+
+	@Override
+	@Transactional
+	public List<TrackDTO> getTracks(String playlistId) {
+		return playlistRepo.findOne(playlistId).getTracks().stream()
+				.map(this::toDTO)
+				.collect(Collectors.toList());
 	}
 }

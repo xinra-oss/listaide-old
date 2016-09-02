@@ -108,13 +108,12 @@ public class ListaideUI extends UI{
 			userBtn.setIcon(FontAwesome.USER);
 			userBtn.addStyleName(ValoTheme.BUTTON_BORDERLESS);
 			final String finalSessionId = sessionId; //for use in lambda expression
-			ContextMenu userMenu = new ContextMenu(
-					new ContextMenu.Entry("Log out", e -> {
+			new ContextMenu.Builder()
+				.action("Log out", e -> {
 						getService(AuthorizationService.class).destroySession(finalSessionId);
 						getPage().setLocation(baseUrl); //reload
 					})
-			);
-			userBtn.setContent(userMenu);
+				.build().attachToButton(userBtn);
 			header.addComponent(userBtn);
 			header.setComponentAlignment(userBtn, Alignment.MIDDLE_RIGHT);
 		}
@@ -142,5 +141,9 @@ public class ListaideUI extends UI{
 	 */
 	public <T extends Service> T getService(Class<T> type) {
 		return serviceProvider.getService(type);
+	}
+	
+	public UserDTO getUser() {
+		return user;
 	}
 }

@@ -3,8 +3,9 @@ package com.xinra.listaide.entity;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
@@ -26,11 +27,18 @@ public class SpotifyPlaylist extends IdentifiableSpotifyEntity {
 	@OneToMany(cascade=CascadeType.ALL, orphanRemoval=true)
 	private Set<SpotifyTrack> tracks;
 	
-	@ManyToMany(mappedBy="children", cascade=CascadeType.ALL)
-	private Set<SpotifyPlaylist> parents;
+//	@ManyToMany(mappedBy="children", cascade=CascadeType.ALL)
+//	private Set<SpotifyPlaylist> parents;
+//	
+//	@ManyToMany(cascade=CascadeType.ALL)
+//	private Set<SpotifyPlaylist> children;
 	
-	@ManyToMany(cascade=CascadeType.ALL)
-	private Set<SpotifyPlaylist> children;
+	//Playlists can only be children/parents of a playlist from the same
+	//user. As we need to load all playlists of the current user eagerly
+	//we simply hold a list of playlistIds as opposed to a real a relation.
+	@ElementCollection
+	@CollectionTable(name="PlaylistParents")
+	private Set<String> parentIds;
 	
 	public ListaideUser getUser() {
 		return user;
@@ -100,17 +108,13 @@ public class SpotifyPlaylist extends IdentifiableSpotifyEntity {
 	public void setFollowers(int followers) {
 		this.followers = followers;
 	}
-	public Set<SpotifyPlaylist> getParents() {
-		return parents;
+
+	public Set<String> getParentIds() {
+		return parentIds;
 	}
-	public void setParents(Set<SpotifyPlaylist> parents) {
-		this.parents = parents;
-	}
-	public Set<SpotifyPlaylist> getChildren() {
-		return children;
-	}
-	public void setChildren(Set<SpotifyPlaylist> children) {
-		this.children = children;
+
+	public void setParentIds(Set<String> parentIds) {
+		this.parentIds = parentIds;
 	}
 
 }

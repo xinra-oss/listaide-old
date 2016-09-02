@@ -9,6 +9,12 @@ public abstract class ListaideView extends VerticalLayout implements View {
 	
 	protected final ListaideUI ui;
 	
+	//ensure that the appropriate super constructor is called
+	@SuppressWarnings("unused")
+	private ListaideView() {
+		ui = null;
+	}
+	
 	public ListaideView(ListaideUI ui) {
 		this.ui = ui;
 		this.setWidth("100%");
