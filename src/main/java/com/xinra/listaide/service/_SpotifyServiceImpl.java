@@ -322,7 +322,8 @@ public class _SpotifyServiceImpl implements SpotifyService {
 	
 	private TrackDTO toDTO(SpotifyTrack source) {
 		TrackDTO target = dtoFactory.createDTO(TrackDTO.class);
-		target.setId(source.getTrackId());
+		target.setId(source.getId());
+		target.setTrackId(source.getTrackId());
 		target.setAddedAt(source.getAddedAt());
 		target.setAddedBy(toDTO(source.getAddedBy()));
 		target.setAlbum(toDTO(source.getAlbum()));
@@ -375,7 +376,7 @@ public class _SpotifyServiceImpl implements SpotifyService {
 				//inherited
 				playlist.getParents().forEach(parent -> {
 					Set<TrackDTO> parentTracks = parent.getTracks().stream()
-							.filter(parentTrack -> parentTrack.getId().equals(track.getId()))
+							.filter(parentTrack -> parentTrack.getTrackId().equals(track.getTrackId()))
 							.collect(Collectors.toSet());
 					if(!parentTracks.isEmpty()) {
 						track.getInheritedFrom().put(parent, parentTracks);
@@ -384,7 +385,7 @@ public class _SpotifyServiceImpl implements SpotifyService {
 				//bequeathed
 				playlist.getChildren().forEach(child -> {
 					Set<TrackDTO> childTracks = child.getTracks().stream()
-							.filter(childTrack -> childTrack.getId().equals(track.getId()))
+							.filter(childTrack -> childTrack.getTrackId().equals(track.getTrackId()))
 							.collect(Collectors.toSet());
 					if(!childTracks.isEmpty()) {
 						track.getBequeathedTo().put(child, childTracks);

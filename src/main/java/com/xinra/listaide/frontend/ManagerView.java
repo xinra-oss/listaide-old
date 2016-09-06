@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.vaadin.hene.popupbutton.PopupButton;
@@ -26,6 +27,7 @@ import com.vaadin.ui.Label;
 import com.vaadin.ui.Link;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Table;
+import com.vaadin.ui.Table.CellStyleGenerator;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 import com.xinra.listaide.service.DurationConverter;
@@ -38,7 +40,7 @@ import com.xinra.listaide.service.TrackDTO;
  * 
  * @author erikhofer
  */
-public class ManagerView extends ListaideView implements ValueChangeListener {
+public class ManagerView extends ListaideView implements ValueChangeListener, CellStyleGenerator {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -51,6 +53,8 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 	private Button btnSave;
 	private Table trackTable;
 	private Map<TrackDTO, Object[]> trackItemCache;
+	private Function<TrackDTO, Integer> visualizedInheritance;
+	private Map<Long, TrackDTO> tracks;
 
 	public ManagerView(ListaideUI ui) {
 		super(ui);
@@ -134,6 +138,8 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 				.captionResolver(p -> p.getName())
 				.action("Open", this::open, FontAwesome.ARROW_RIGHT)
 				.action("Remove", this::removeParent, FontAwesome.REMOVE)
+				.selectHandler(this::visualizeParent)
+				.deselectHandler(this::clearVisualization)
 				.append(btnAddParent)
 				.build();
 		playlistBinding.bind(parents, PlaylistDTO.Parents);
@@ -148,6 +154,8 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 				.captionResolver(p -> p.getName())
 				.action("Open", this::open, FontAwesome.ARROW_RIGHT)
 				.action("Remove", this::removeChild, FontAwesome.REMOVE)
+				.selectHandler(this::visualizeChild)
+				.deselectHandler(this::clearVisualization)
 				.append(btnAddChild)
 				.build();
 		playlistBinding.bind(children, PlaylistDTO.Children);
@@ -160,7 +168,9 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 		//Tracks
 		playlistLayout.addComponent(new Label("Tracks"));
 		trackItemCache = new HashMap<>();
+		tracks = new HashMap<>();
 		trackTable = new Table();
+		trackTable.setCellStyleGenerator(this);
 		trackTable.addContainerProperty(TrackDTO.Number, Integer.class, null);
 		trackTable.addContainerProperty(TrackDTO.Name, Link.class, null);
 		trackTable.addContainerProperty(TrackDTO.Artists, Label.class, null);
@@ -193,6 +203,11 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 		symbolLayout.setSpacing(true);
 		symbolLayout.addComponent(new Label(FontAwesome.ARROW_UP.getHtml() + " Inherited From", ContentMode.HTML));
 		symbolLayout.addComponent(new Label(FontAwesome.ARROW_DOWN.getHtml() + " Bequeathed To", ContentMode.HTML));
+		Label inheritanceSingle = new Label(FontAwesome.CIRCLE.getHtml() + " Inherited/Bequeathed Once", ContentMode.HTML);
+		inheritanceSingle.addStyleName(ListaideTheme.INHERITANCE_SINGLE_SYMBOL);
+		Label inheritanceMulti = new Label(FontAwesome.CIRCLE.getHtml() + " Inherited/Bequeathed Multiple Times", ContentMode.HTML);
+		inheritanceMulti.addStyleName(ListaideTheme.INHERITANCE_MULTI_SYMBOL);
+		symbolLayout.addComponents(inheritanceSingle, inheritanceMulti);
 		playlistLayout.addComponent(symbolLayout);
 	}
 
@@ -218,8 +233,7 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 			trackTable.removeAllItems();
 			currentPlaylist.getTracks().forEach(track -> {
 				//Somehow the track object itself can't be used as itemId
-				//but the track number is unique, too.
-				trackTable.addItem(getTrackItem(track), track.getNumber());
+				trackTable.addItem(getTrackItem(track), track.getId());
 			});
 			trackTable.sort();
 		}
@@ -244,6 +258,7 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 				getInheritanceCounter(trackDTO.getBequeathedTo())
 			};
 			trackItemCache.put(trackDTO, item);
+			tracks.put(trackDTO.getId(), trackDTO);
 		}
 		return item;
 	}
@@ -276,6 +291,21 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 		
 	}
 	
+	private void visualizeParent(PlaylistDTO parent) {
+		visualizedInheritance = track -> track.getInheritedFrom().get(parent) == null ? 0 : track.getInheritedFrom().size();
+		trackTable.refreshRowCache();
+	}
+	
+	private void visualizeChild(PlaylistDTO child) {
+		visualizedInheritance = track -> track.getBequeathedTo().get(child) == null ? 0 : track.getBequeathedTo().size();
+		trackTable.refreshRowCache();
+	}
+	
+	private void clearVisualization(PlaylistDTO playlistDTO) {
+		visualizedInheritance = null;
+		trackTable.refreshRowCache();
+	}
+	
 	/**
 	 * Navigate to the specified playlist
 	 */
@@ -286,6 +316,18 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 	@Override
 	public void valueChange(ValueChangeEvent event) {
 		Notification.show(""+playlistBinding.isModified());
+	}
+
+	@Override
+	public String getStyle(Table source, Object itemId, Object propertyId) {
+		if(propertyId == null && visualizedInheritance != null) {
+			switch(visualizedInheritance.apply(tracks.get(itemId))) {
+				case 0: return null;
+				case 1: return ListaideTheme.INHERITANCE_SINGLE;
+				default: return ListaideTheme.INHERITANCE_MULTI;
+			}
+		}
+		return null;
 	}
 
 }

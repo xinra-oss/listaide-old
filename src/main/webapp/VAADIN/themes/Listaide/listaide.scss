@@ -58,4 +58,24 @@
   		color: #464646;
 	}
 	
+	/* inheritance visualization */
+	$inheritance-single-color: #76f27c;
+	$inheritance-multi-color: #eccb65;
+	
+	.v-table-row-la-inheritance-single {
+		background-color: $inheritance-single-color;
+	}
+	
+	.v-table-row-la-inheritance-multi {
+		background-color: $inheritance-multi-color;
+	}
+	
+	.la-inheritance-single-symbol .v-icon {
+		color: $inheritance-single-color;
+	}
+	
+	.la-inheritance-multi-symbol .v-icon {
+		color: $inheritance-multi-color;
+	}
+	
 }

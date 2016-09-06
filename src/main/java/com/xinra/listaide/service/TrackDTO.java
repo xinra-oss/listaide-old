@@ -8,6 +8,7 @@ import java.util.Set;
 public interface TrackDTO extends DTO {
 	
 	static final String Id = "id";
+	static final String TrackId = "trackId";
 	static final String Album = "album";
 	static final String Artists = "artists";
 	static final String Duration = "duration";
@@ -18,8 +19,11 @@ public interface TrackDTO extends DTO {
 	static final String InheritedFrom = "inheritedFrom";
 	static final String BequeathedTo = "bequeathedTo";
 	
-	String getId();
-	void setId(String id);
+	Long getId();
+	void setId(Long id);
+	
+	String getTrackId();
+	void setTrackId(String trackId);
 	
 	AlbumDTO getAlbum();
 	void setAlbum(AlbumDTO album);
