@@ -21,6 +21,7 @@ import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.Panel;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
@@ -90,7 +91,6 @@ public class ListaideUI extends UI{
 		//set up UI
 		Page.getCurrent().setTitle("ListAide for Spotify");
 		VerticalLayout layout = new VerticalLayout();
-		layout.setSizeFull();
 		
 		//header
 		HorizontalLayout header = new HorizontalLayout();
@@ -122,7 +122,7 @@ public class ListaideUI extends UI{
 		VerticalLayout content = new VerticalLayout();
 		content.setWidth("100%");
 		layout.addComponent(content);
-		layout.setExpandRatio(content, 1); //use all available space -> sticky footer
+//		layout.setExpandRatio(content, 1); //use all available space -> sticky footer
 		navigator = new Navigator(this, content);
 		views.entrySet().forEach(e -> navigator.addView(e.getKey(), e.getValue()));
 		
@@ -133,7 +133,11 @@ public class ListaideUI extends UI{
 		footer.addComponent(new Label("footer"));
 		layout.addComponent(footer);
 		
-		setContent(layout);
+		Panel panel = new Panel();
+		panel.setSizeFull();
+		panel.addStyleName(ValoTheme.PANEL_BORDERLESS);
+		panel.setContent(layout);
+		setContent(panel);
 	}
 	
 	/**

@@ -1,8 +1,13 @@
 package com.xinra.listaide.frontend;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.vaadin.hene.popupbutton.PopupButton;
 
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
@@ -10,16 +15,23 @@ import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.data.util.BeanItem;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FontAwesome;
+import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.GridLayout;
+import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.Link;
 import com.vaadin.ui.Notification;
+import com.vaadin.ui.Table;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
+import com.xinra.listaide.service.DurationConverter;
 import com.xinra.listaide.service.PlaylistDTO;
 import com.xinra.listaide.service.SpotifyService;
+import com.xinra.listaide.service.TrackDTO;
 
 /**
  * The main view that contains the actual playlist manager
@@ -37,6 +49,8 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 	private VerticalLayout rightSideLayout;
 	private BeanFieldGroup<PlaylistDTO> playlistBinding;
 	private Button btnSave;
+	private Table trackTable;
+	private Map<TrackDTO, Object[]> trackItemCache;
 
 	public ManagerView(ListaideUI ui) {
 		super(ui);
@@ -51,8 +65,8 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 		});
 		
 		HorizontalSplitPanel splitLayout = new HorizontalSplitPanel();
-		splitLayout.setSplitPosition(20.0f);
-		splitLayout.setHeight("100%");
+		splitLayout.addStyleName(ValoTheme.SPLITPANEL_LARGE);
+		splitLayout.setSplitPosition(15.0f);
 		
 		//build sidebar
 		VerticalLayout sidebar = new VerticalLayout();
@@ -143,6 +157,43 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 		splitLayout.addComponent(rightSideLayout);
 		addComponent(splitLayout);
 		
+		//Tracks
+		playlistLayout.addComponent(new Label("Tracks"));
+		trackItemCache = new HashMap<>();
+		trackTable = new Table();
+		trackTable.addContainerProperty(TrackDTO.Number, Integer.class, null);
+		trackTable.addContainerProperty(TrackDTO.Name, Link.class, null);
+		trackTable.addContainerProperty(TrackDTO.Artists, Label.class, null);
+		trackTable.addContainerProperty(TrackDTO.Album, Link.class, null);
+		trackTable.addContainerProperty(TrackDTO.AddedBy, Link.class, null);
+		trackTable.addContainerProperty(TrackDTO.AddedAt, Date.class, null);
+		trackTable.addContainerProperty(TrackDTO.Duration, Integer.class, null);
+		trackTable.addContainerProperty(TrackDTO.InheritedFrom, Component.class, null);
+		trackTable.addContainerProperty(TrackDTO.BequeathedTo, Component.class, null);
+		trackTable.setConverter(TrackDTO.AddedAt, new DateConverter("yyyy-MM-dd"));
+		trackTable.setConverter(TrackDTO.Duration, new DurationConverter());
+		trackTable.setColumnHeaders(
+			FontAwesome.HASHTAG.getHtml(),
+			"Name",
+			"Artists",
+			"Album",
+			"Added By",
+			"Added At",
+			FontAwesome.CLOCK_O.getHtml(),
+			FontAwesome.ARROW_UP.getHtml(),
+			FontAwesome.ARROW_DOWN.getHtml()
+		);
+		trackTable.setPageLength(12);
+		trackTable.setWidth("1100px");
+		trackTable.sort(new Object[] {TrackDTO.Number}, new boolean[] {true});
+		playlistLayout.addComponent(trackTable);
+		
+		//symbol explanations
+		HorizontalLayout symbolLayout = new HorizontalLayout();
+		symbolLayout.setSpacing(true);
+		symbolLayout.addComponent(new Label(FontAwesome.ARROW_UP.getHtml() + " Inherited From", ContentMode.HTML));
+		symbolLayout.addComponent(new Label(FontAwesome.ARROW_DOWN.getHtml() + " Bequeathed To", ContentMode.HTML));
+		playlistLayout.addComponent(symbolLayout);
 	}
 
 	@Override
@@ -162,12 +213,51 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 		} else { //show playlist with specified id
 			rightSideLayout.addComponent(playlistLayout);
 			BeanItem<PlaylistDTO> playlistItem = playlistItems.get(playlistId);
-			if(playlistItem.getBean().getTracks() == null) { //load tracks lazily
-				playlistItem.getBean().setTracks(ui.getService(SpotifyService.class).getTracks(playlistId));
-			}
 			playlistBinding.setItemDataSource(playlistItem);
 			currentPlaylist = playlistItem.getBean();
+			trackTable.removeAllItems();
+			currentPlaylist.getTracks().forEach(track -> {
+				//Somehow the track object itself can't be used as itemId
+				//but the track number is unique, too.
+				trackTable.addItem(getTrackItem(track), track.getNumber());
+			});
+			trackTable.sort();
 		}
+	}
+	
+	private Object[] getTrackItem(TrackDTO trackDTO) {
+		Object[] item = trackItemCache.get(trackDTO);
+		if(item == null) {
+			String artists = trackDTO.getArtists().stream()
+					.map(a -> String.format("<a href='%s' target='_blank'>%s</a>", a.getUrl(), a.getName()))
+					.collect(Collectors.joining(", "));
+			
+			item = new Object[] {
+				trackDTO.getNumber(),
+				Util.createLink(trackDTO.getName(), "http://to.do"),
+				new Label(artists, ContentMode.HTML),
+				Util.createLink(trackDTO.getAlbum().getName(), trackDTO.getAlbum().getUrl()),
+				Util.createLink(trackDTO.getAddedBy().getId(), trackDTO.getAddedBy().getUrl()),
+				trackDTO.getAddedAt(),
+				trackDTO.getDuration(),
+				getInheritanceCounter(trackDTO.getInheritedFrom()),
+				getInheritanceCounter(trackDTO.getBequeathedTo())
+			};
+			trackItemCache.put(trackDTO, item);
+		}
+		return item;
+	}
+	
+	private Component getInheritanceCounter(Map<PlaylistDTO, Set<TrackDTO>> inheritance) {
+		if(inheritance.isEmpty()) {
+			return new Label("0");
+		}
+		PopupButton button = new PopupButton(""+inheritance.size());
+		button.addStyleName(ValoTheme.BUTTON_LINK);
+		ContextMenu.Builder builder = new ContextMenu.Builder();
+		inheritance.forEach((p, t) -> builder.action(p.getName() + " (" + t.size() + ")",  e -> open(p)));
+		builder.build().attachToButton(button);
+		return button;
 	}
 	
 	private void removeParent(PlaylistDTO parent) {

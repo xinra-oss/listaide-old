@@ -34,10 +34,4 @@ public interface SpotifyService extends Service {
 	 */
 	List<PlaylistDTO> getPlaylists(String userId);
 	
-	/**
-	 * Returns the tracks of a specific playlist.
-	 * @param playlistId the id of the playlist the tracks of which should be returned
-	 */
-	List<TrackDTO> getTracks(String playlistId);
-	
 }

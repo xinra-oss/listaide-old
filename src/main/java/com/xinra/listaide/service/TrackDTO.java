@@ -2,9 +2,12 @@ package com.xinra.listaide.service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface TrackDTO extends DTO {
 	
+	static final String Id = "id";
 	static final String Album = "album";
 	static final String Artists = "artists";
 	static final String Duration = "duration";
@@ -12,6 +15,11 @@ public interface TrackDTO extends DTO {
 	static final String AddedAt = "addedAt";
 	static final String AddedBy = "addedBy";
 	static final String Number = "number";
+	static final String InheritedFrom = "inheritedFrom";
+	static final String BequeathedTo = "bequeathedTo";
+	
+	String getId();
+	void setId(String id);
 	
 	AlbumDTO getAlbum();
 	void setAlbum(AlbumDTO album);
@@ -33,5 +41,11 @@ public interface TrackDTO extends DTO {
 	
 	Integer getNumber();
 	void setNumber(Integer number);
+	
+	Map<PlaylistDTO, Set<TrackDTO>> getInheritedFrom();
+	void setInheritedFrom(Map<PlaylistDTO, Set<TrackDTO>> inheritedFrom);
+	
+	Map<PlaylistDTO, Set<TrackDTO>> getBequeathedTo();
+	void setBequeathedTo(Map<PlaylistDTO, Set<TrackDTO>> bequeathedTo);
 
 }

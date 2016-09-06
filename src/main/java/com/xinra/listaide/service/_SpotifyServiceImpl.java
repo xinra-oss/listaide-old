@@ -8,11 +8,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.annotation.SessionScope;
 
 import com.wrapper.spotify.Api;
 import com.wrapper.spotify.exceptions.NotModifiedException;
@@ -36,6 +38,7 @@ import com.xinra.listaide.entity.SpotifyUser;
 import com.xinra.listaide.entity.TrackRepository;
 import com.xinra.listaide.entity.UserRepository;
 
+@SessionScope
 @Service
 public class _SpotifyServiceImpl implements SpotifyService {
 	
@@ -310,22 +313,46 @@ public class _SpotifyServiceImpl implements SpotifyService {
 		target.setOwner(toDTO(source.getOwner()));
 		target.setPublicAccess(source.isPublicAccess());
 		target.setUrl(source.getUrl());
+		target.setTracks(source.getTracks().stream().map(this::toDTO).collect(Collectors.toList()));
 		//have to be added afterwards
 		target.setChildren(new HashSet<>());
 		target.setParents(new HashSet<>());
-		//tracks are not added as they are fetched lazily
 		return target;
 	}
 	
 	private TrackDTO toDTO(SpotifyTrack source) {
 		TrackDTO target = dtoFactory.createDTO(TrackDTO.class);
-		
+		target.setId(source.getTrackId());
+		target.setAddedAt(source.getAddedAt());
+		target.setAddedBy(toDTO(source.getAddedBy()));
+		target.setAlbum(toDTO(source.getAlbum()));
+		target.setArtists(source.getArtists().stream().map(this::toDTO).collect(Collectors.toList()));
+		target.setDuration(source.getDuration());
+		target.setName(source.getName());
+		target.setNumber(source.getNumber());
+		//have to be added later
+		target.setInheritedFrom(new HashMap<>());
+		target.setBequeathedTo(new HashMap<>());
+		return target;
+	}
+	
+	private ArtistDTO toDTO(SpotifyArtist source) {
+		ArtistDTO target = dtoFactory.createDTO(ArtistDTO.class);
+		target.setName(source.getName());
+		target.setUrl(source.getUrl());
+		return target;
+	}
+	
+	private AlbumDTO toDTO(SpotifyAlbum source) {
+		AlbumDTO target = dtoFactory.createDTO(AlbumDTO.class);
+		target.setName(source.getName());
+		target.setUrl(source.getUrl());
 		return target;
 	}
 
 	@Override
 	public List<PlaylistDTO> getPlaylists(String userId) {
-		List<SpotifyPlaylist> playlists = playlistRepo.findByUserId(userId);
+		List<SpotifyPlaylist> playlists = playlistRepo.findByUserIdEagerly(userId);
 		Map<String, PlaylistDTO> playlistDTOs = new HashMap<>();
 		
 		//map to DTO
@@ -333,10 +360,6 @@ public class _SpotifyServiceImpl implements SpotifyService {
 		
 		//set child/parent relations
 		playlists.forEach(playlist -> {
-//			playlist.getChildren().forEach(c -> playlistDTOs.get(playlist.getId())
-//					.getChildren().add(playlistDTOs.get(c.getId())));
-//			playlist.getParents().forEach(c -> playlistDTOs.get(playlist.getId())
-//					.getParents().add(playlistDTOs.get(c.getId())));
 			PlaylistDTO playlistDTO = playlistDTOs.get(playlist.getId());
 			playlist.getParentIds().stream()
 				.map(playlistDTOs::get)
@@ -346,14 +369,30 @@ public class _SpotifyServiceImpl implements SpotifyService {
 			});
 		});
 		
+		//set track inheritance info
+		playlistDTOs.values().forEach(playlist -> {
+			playlist.getTracks().forEach(track -> {
+				//inherited
+				playlist.getParents().forEach(parent -> {
+					Set<TrackDTO> parentTracks = parent.getTracks().stream()
+							.filter(parentTrack -> parentTrack.getId().equals(track.getId()))
+							.collect(Collectors.toSet());
+					if(!parentTracks.isEmpty()) {
+						track.getInheritedFrom().put(parent, parentTracks);
+					}
+				});
+				//bequeathed
+				playlist.getChildren().forEach(child -> {
+					Set<TrackDTO> childTracks = child.getTracks().stream()
+							.filter(childTrack -> childTrack.getId().equals(track.getId()))
+							.collect(Collectors.toSet());
+					if(!childTracks.isEmpty()) {
+						track.getBequeathedTo().put(child, childTracks);
+					}
+				});
+			});
+		});
+		
 		return new ArrayList<>(playlistDTOs.values());
-	}
-
-	@Override
-	@Transactional
-	public List<TrackDTO> getTracks(String playlistId) {
-		return playlistRepo.findOne(playlistId).getTracks().stream()
-				.map(this::toDTO)
-				.collect(Collectors.toList());
 	}
 }

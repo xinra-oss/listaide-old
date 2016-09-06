@@ -1,6 +1,6 @@
 package com.xinra.listaide.service;
 
-public interface ArtistDTO {
+public interface ArtistDTO extends SpotifyDTO {
 	
 static final String Name = "name";
 	

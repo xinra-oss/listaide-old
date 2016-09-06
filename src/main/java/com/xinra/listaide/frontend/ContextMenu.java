@@ -93,7 +93,7 @@ public class ContextMenu extends VerticalLayout {
 			if(c instanceof Action) {
 				Action action = (Action) c;
 				Button actionButton = new Button(action.caption, action.icon);
-				actionButton.addStyleName(ValoTheme.BUTTON_BORDERLESS);
+				actionButton.addStyleName(ValoTheme.BUTTON_LINK);
 				actionButton.addStyleName(ValoTheme.BUTTON_SMALL);
 				actionButton.addClickListener(e -> {
 					this.button.setPopupVisible(false);

@@ -16,11 +16,14 @@ public abstract class LinkField<T> extends CustomField<T> {
 	protected abstract String getLinkText(T value);
 
 	protected abstract String getLinkUrl(T value);
+	
+	public LinkField() {
+		link = new Link();
+		link.setTargetName("_blank");
+	}
 
 	@Override
 	protected Component initContent() {
-		link = new Link();
-		link.setTargetName("_blank");
 		return link;
 	}
 	
