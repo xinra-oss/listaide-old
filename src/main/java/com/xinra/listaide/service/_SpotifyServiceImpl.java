@@ -275,6 +275,7 @@ public class _SpotifyServiceImpl implements SpotifyService {
 			target.getAddedBy().setImageUrl(source.getAddedBy().getImages().get(0).getUrl());
 		}
 		target.setTrackId(source.getTrack().getId());
+		target.setUrl(source.getTrack().getExternalUrls().get("spotify"));
 		if(target.getAlbum() == null) target.setAlbum(new SpotifyAlbum());
 		target.getAlbum().setName(source.getTrack().getAlbum().getName());
 		target.getAlbum().setUrl(source.getTrack().getAlbum().getExternalUrls().get("spotify"));
@@ -323,6 +324,7 @@ public class _SpotifyServiceImpl implements SpotifyService {
 	private TrackDTO toDTO(SpotifyTrack source) {
 		TrackDTO target = dtoFactory.createDTO(TrackDTO.class);
 		target.setId(source.getId());
+		target.setUrl(source.getUrl());
 		target.setTrackId(source.getTrackId());
 		target.setAddedAt(source.getAddedAt());
 		target.setAddedBy(toDTO(source.getAddedBy()));

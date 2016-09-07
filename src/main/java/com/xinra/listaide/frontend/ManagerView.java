@@ -248,7 +248,7 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 			
 			item = new Object[] {
 				trackDTO.getNumber(),
-				Util.createLink(trackDTO.getName(), "http://to.do"),
+				Util.createLink(trackDTO.getName(), trackDTO.getUrl()),
 				new Label(artists, ContentMode.HTML),
 				Util.createLink(trackDTO.getAlbum().getName(), trackDTO.getAlbum().getUrl()),
 				Util.createLink(trackDTO.getAddedBy().getId(), trackDTO.getAddedBy().getUrl()),

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public interface TrackDTO extends DTO {
+public interface TrackDTO extends SpotifyDTO {
 	
 	static final String Id = "id";
 	static final String TrackId = "trackId";
