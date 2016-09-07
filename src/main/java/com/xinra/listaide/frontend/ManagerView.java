@@ -8,8 +8,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.vaadin.hene.popupbutton.PopupButton;
-
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.fieldgroup.BeanFieldGroup;
@@ -19,12 +17,11 @@ import com.vaadin.server.FontAwesome;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
-import com.vaadin.ui.Component;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.Label;
-import com.vaadin.ui.Link;
+import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.Table.CellStyleGenerator;
@@ -161,25 +158,23 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 		playlistBinding.bind(children, PlaylistDTO.Children);
 		playlistLayout.addComponent(children);
 		
-		rightSideLayout = new VerticalLayout();
-		splitLayout.addComponent(rightSideLayout);
-		addComponent(splitLayout);
-		
 		//Tracks
 		playlistLayout.addComponent(new Label("Tracks"));
 		trackItemCache = new HashMap<>();
 		tracks = new HashMap<>();
 		trackTable = new Table();
+		trackTable.addStyleName(ValoTheme.TABLE_COMPACT);
+		trackTable.addStyleName(ValoTheme.TABLE_SMALL);
 		trackTable.setCellStyleGenerator(this);
 		trackTable.addContainerProperty(TrackDTO.Number, Integer.class, null);
-		trackTable.addContainerProperty(TrackDTO.Name, Link.class, null);
+		trackTable.addContainerProperty(TrackDTO.Name, Label.class, null);
 		trackTable.addContainerProperty(TrackDTO.Artists, Label.class, null);
-		trackTable.addContainerProperty(TrackDTO.Album, Link.class, null);
-		trackTable.addContainerProperty(TrackDTO.AddedBy, Link.class, null);
+		trackTable.addContainerProperty(TrackDTO.Album, Label.class, null);
+		trackTable.addContainerProperty(TrackDTO.AddedBy, Label.class, null);
 		trackTable.addContainerProperty(TrackDTO.AddedAt, Date.class, null);
 		trackTable.addContainerProperty(TrackDTO.Duration, Integer.class, null);
-		trackTable.addContainerProperty(TrackDTO.InheritedFrom, Component.class, null);
-		trackTable.addContainerProperty(TrackDTO.BequeathedTo, Component.class, null);
+		trackTable.addContainerProperty(TrackDTO.InheritedFrom, MenuBar.class, null);
+		trackTable.addContainerProperty(TrackDTO.BequeathedTo, MenuBar.class, null);
 		trackTable.setConverter(TrackDTO.AddedAt, new DateConverter("yyyy-MM-dd"));
 		trackTable.setConverter(TrackDTO.Duration, new DurationConverter());
 		trackTable.setColumnHeaders(
@@ -193,7 +188,7 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 			FontAwesome.ARROW_UP.getHtml(),
 			FontAwesome.ARROW_DOWN.getHtml()
 		);
-		trackTable.setPageLength(12);
+		trackTable.setPageLength(16);
 		trackTable.setWidth("1100px");
 		trackTable.sort(new Object[] {TrackDTO.Number}, new boolean[] {true});
 		playlistLayout.addComponent(trackTable);
@@ -209,6 +204,10 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 		inheritanceMulti.addStyleName(ListaideTheme.INHERITANCE_MULTI_SYMBOL);
 		symbolLayout.addComponents(inheritanceSingle, inheritanceMulti);
 		playlistLayout.addComponent(symbolLayout);
+		
+		rightSideLayout = new VerticalLayout();
+		splitLayout.addComponent(rightSideLayout);
+		addComponent(splitLayout);
 	}
 
 	@Override
@@ -263,16 +262,13 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 		return item;
 	}
 	
-	private Component getInheritanceCounter(Map<PlaylistDTO, Set<TrackDTO>> inheritance) {
-		if(inheritance.isEmpty()) {
-			return new Label("0");
-		}
-		PopupButton button = new PopupButton(""+inheritance.size());
-		button.addStyleName(ValoTheme.BUTTON_LINK);
-		ContextMenu.Builder builder = new ContextMenu.Builder();
-		inheritance.forEach((p, t) -> builder.action(p.getName() + " (" + t.size() + ")",  e -> open(p)));
-		builder.build().attachToButton(button);
-		return button;
+	private MenuBar getInheritanceCounter(Map<PlaylistDTO, Set<TrackDTO>> inheritance) {
+		MenuBar menu = new MenuBar();
+		menu.addStyleName(ValoTheme.MENUBAR_BORDERLESS);
+		menu.addStyleName(ValoTheme.MENUBAR_SMALL);
+		MenuBar.MenuItem item = menu.addItem(""+inheritance.size(), null);
+		inheritance.forEach((p, t) -> item.addItem(p.getName() + " (" + t.size() + ")",  i -> open(p)));
+		return menu;
 	}
 	
 	private void removeParent(PlaylistDTO parent) {

@@ -10,14 +10,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.vaadin.hene.popupbutton.PopupButton;
-
 import com.vaadin.server.Resource;
-import com.vaadin.ui.Button;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CustomField;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.themes.ValoTheme;
+import com.vaadin.ui.MenuBar;
 
 public final class Tags<T> extends CustomField<Set<T>> {
 
@@ -45,7 +42,6 @@ public final class Tags<T> extends CustomField<Set<T>> {
 		private List<Action<T>> actions = new ArrayList<>();
 		private List<Component> append = new ArrayList<>();
 		private List<Component> prepend = new ArrayList<>();
-		private String selectedStyle = ValoTheme.BUTTON_PRIMARY;
 		private SelectionMode selectionMode = SelectionMode.SINGLE;
 		private Function<T, String> captionResolver = t -> t.toString();
 		private Consumer<T> selectHandler;
@@ -80,11 +76,6 @@ public final class Tags<T> extends CustomField<Set<T>> {
 			return this;
 		}
 		
-		public Builder<T> selectedStyle(String selectedStyle) {
-			this.selectedStyle = selectedStyle;
-			return this;
-		}
-		
 		public Builder<T> selectionMode(SelectionMode selectionMode) {
 			this.selectionMode = selectionMode;
 			return this;
@@ -96,35 +87,33 @@ public final class Tags<T> extends CustomField<Set<T>> {
 		}
 		
 		public Tags<T> build() {
-			return new Tags<>(actions, append, prepend, selectedStyle, selectionMode, captionResolver, selectHandler, deselectHandler);
+			return new Tags<>(actions, append, prepend, selectionMode, captionResolver, selectHandler, deselectHandler);
 		}
 	}
 	
 	private HorizontalLayout layout;
-	private Map<T, Component> buttons;
+	private Map<T, MenuBar> tagMenus;
 	private Set<T> selection;
 	
 	private List<Action<T>> actions;
 	private List<Component> append;
 	private List<Component> prepend;
-	private String selectedStyle;
 	private SelectionMode selectionMode;
 	private Function<T, String> captionResolver;
 	private Consumer<T> selectHandler;
 	private Consumer<T> deselectHandler;
 
-	public Tags(List<Action<T>> actions, List<Component> append, List<Component> prepend, String selectedStyle,
-			SelectionMode selectionMode, Function<T, String> captionResolver, Consumer<T> selectHandler, Consumer<T> deselectHandler) {
+	public Tags(List<Action<T>> actions, List<Component> append, List<Component> prepend, SelectionMode selectionMode,
+			Function<T, String> captionResolver, Consumer<T> selectHandler, Consumer<T> deselectHandler) {
 		this.actions = actions;
 		this.append = append;
 		this.prepend = prepend;
-		this.selectedStyle = selectedStyle;
 		this.selectionMode = selectionMode;
 		this.captionResolver = captionResolver;
 		this.selectHandler = selectHandler; 
 		this.deselectHandler = deselectHandler; 
 		
-		buttons = new HashMap<>();
+		tagMenus = new HashMap<>();
 		selection = new HashSet<>();
 		layout = new HorizontalLayout();
 		layout.setSpacing(true);
@@ -161,13 +150,13 @@ public final class Tags<T> extends CustomField<Set<T>> {
 	
 	private void select(T tag) {
 		selection.add(tag);
-		buttons.get(tag).addStyleName(selectedStyle);
+		tagMenus.get(tag).getItems().get(0).setChecked(true);
 		if(selectHandler != null) selectHandler.accept(tag);
 	}
 	
 	private void deselect(T tag) {
 		selection.remove(tag);
-		buttons.get(tag).removeStyleName(selectedStyle);
+		tagMenus.get(tag).getItems().get(0).setChecked(false);
 		if(deselectHandler != null) deselectHandler.accept(tag);
 	}
 
@@ -182,54 +171,37 @@ public final class Tags<T> extends CustomField<Set<T>> {
 		layout.removeAllComponents(); //clear and re-add
 		prepend.forEach(layout::addComponent);
 		newValue.forEach(tag -> {
-			Component button = buttons.get(tag); //get button from cache
-			if(button == null) { //if not cached, create a new one
-				try {
-					button = getButtonClass().newInstance();
-				} catch (Exception e) {
-					throw new RuntimeException(e);
+			MenuBar tagMenu = tagMenus.get(tag); //get tagMenu from cache
+			if(tagMenu == null) { //if not cached, create a new one
+				tagMenu = new MenuBar();
+				MenuBar.MenuItem tagItem = tagMenu.addItem(captionResolver.apply(tag), null);
+				if(selectionMode != SelectionMode.NONE) {
+					tagItem.setCheckable(true);
+					tagItem.setCommand(i -> {
+						if(selection.contains(tag)) {
+							deselect(tag);
+							return;
+						}
+						if(selectionMode == SelectionMode.SINGLE)
+							setSelection(Collections.emptySet());
+						select(tag);
+					});
 				}
-				button.setCaption(captionResolver.apply(tag));
-				if(!actions.isEmpty()) { //if applicable, add action menu
-					ContextMenu.Builder popupBuilder = new ContextMenu.Builder();
-					actions.forEach(a -> popupBuilder.action(a.caption, e -> a.listener.accept(tag), a.icon));
-					popupBuilder.build().attachToButton(getButtonClass().isAssignableFrom(PopupButton.class) ?
-							(PopupButton) button : ((SplitPopupButton) button).getPopupButton());
+				if(!actions.isEmpty()) { //if applicable, add actions
+					MenuBar.MenuItem actionsItem = selectionMode == SelectionMode.NONE ? tagItem : tagMenu.addItem("", null);
+					actions.forEach(a -> actionsItem.addItem(a.caption, a.icon, i -> a.listener.accept(tag)));
 				}
-				if(selectionMode != SelectionMode.NONE) { //if applicable, add select listener
-					(getButtonClass().isAssignableFrom(SplitPopupButton.class)
-							? ((SplitPopupButton) button).getMainButton()
-							: (Button) button).addClickListener(e -> {
-								if(selection.contains(tag)) {
-									deselect(tag);
-									return;
-								}
-								if(selectionMode == SelectionMode.SINGLE)
-									setSelection(Collections.emptySet());
-								select(tag);
-							});
-				}
-				buttons.put(tag, button); //add to cache
+				tagMenus.put(tag, tagMenu); //add to cache
 			}
-			layout.addComponent(button);
+			layout.addComponent(tagMenu);
 		});
 		append.forEach(layout::addComponent);
-	}
-	
-	private Class<? extends Component> getButtonClass() {
-		if(actions.isEmpty()) {
-			return Button.class;
-		} else if(selectionMode == SelectionMode.NONE) {
-			return PopupButton.class;
-		} else {
-			return SplitPopupButton.class;
-		}
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public Class<? extends Set<T>> getType() {
-		return (Class<? extends Set<T>>) Set.class;
+		return (Class<? extends Set<T>>) (Class<?>) Set.class;
 	}
 
 }

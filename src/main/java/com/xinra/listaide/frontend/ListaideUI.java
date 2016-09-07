@@ -8,7 +8,6 @@ import javax.servlet.http.Cookie;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.vaadin.hene.popupbutton.PopupButton;
 
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
@@ -21,6 +20,7 @@ import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
@@ -104,18 +104,16 @@ public class ListaideUI extends UI{
 		
 		//user info if applicable
 		if(user != null) {
-			PopupButton userBtn = new PopupButton(user.getId());
-			userBtn.setIcon(FontAwesome.USER);
-			userBtn.addStyleName(ValoTheme.BUTTON_BORDERLESS);
+			MenuBar userMenu = new MenuBar();
+			userMenu.addStyleName(ValoTheme.MENUBAR_BORDERLESS);
+			MenuBar.MenuItem userItem = userMenu.addItem(user.getId(), FontAwesome.USER, null);
 			final String finalSessionId = sessionId; //for use in lambda expression
-			new ContextMenu.Builder()
-				.action("Log out", e -> {
-						getService(AuthorizationService.class).destroySession(finalSessionId);
-						getPage().setLocation(baseUrl); //reload
-					})
-				.build().attachToButton(userBtn);
-			header.addComponent(userBtn);
-			header.setComponentAlignment(userBtn, Alignment.MIDDLE_RIGHT);
+			userItem.addItem("Logout", FontAwesome.POWER_OFF, i -> {
+				getService(AuthorizationService.class).destroySession(finalSessionId);
+				getPage().setLocation(baseUrl); //reload
+			});
+			header.addComponent(userMenu);
+			header.setComponentAlignment(userMenu, Alignment.MIDDLE_RIGHT);
 		}
 		
 		//content area and navigator

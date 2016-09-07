@@ -6,7 +6,7 @@
 	.la-header {
 		@include valo-gradient(#585858);
 		
-		.v-button {
+		.v-button, .v-menubar-menuitem {
 			color: #FFF;
 		}
 	}
@@ -25,32 +25,6 @@
 	
 	.la-checkbox-alignment .v-checkbox {
 		top: 35px!important;
-	}
-	
-	.v-table .v-popupbutton {
-		padding: 0 8px;
-	}
-	
-	
-	/* SplitPopupButton */
-	.la-splitpopupbutton-popup {
-  		border-bottom-left-radius: 0!important;
-  		border-top-left-radius: 0!important;
-  		border-left: none!important;
-  		min-width: 0!important;
-  		
-  		.v-popup-indicator::before {
-  			margin: 0!important;
-		}
-	}
-
-	.la-splitpopupbutton-main {
-  		border-bottom-right-radius: 0!important;
-  		border-top-right-radius: 0!important;
-	}
-	
-	.la-splitpopupbutton-main, .la-splitpopupbutton-popup {
-		padding: 0 16px!important;
 	}
 	
 	/* quiet danger button visibility fix */

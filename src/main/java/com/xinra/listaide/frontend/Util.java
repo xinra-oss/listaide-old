@@ -1,7 +1,7 @@
 package com.xinra.listaide.frontend;
 
-import com.vaadin.server.ExternalResource;
-import com.vaadin.ui.Link;
+import com.vaadin.shared.ui.label.ContentMode;
+import com.vaadin.ui.Label;
 
 public class Util {
 	
@@ -10,10 +10,9 @@ public class Util {
 	 * @param caption The caption (link text)
 	 * @param url The target URL
 	 */
-	public static Link createLink(String caption, String url) {
-		Link link = new Link(caption, new ExternalResource(url));
-		link.setTargetName("_blank");
-		return link;
+	public static Label createLink(String caption, String url) {
+		String link = String.format("<a href='%s' target='_blank'>%s</a>", url, caption);
+		return new Label(link, ContentMode.HTML);
 	}
 	
 	/**
