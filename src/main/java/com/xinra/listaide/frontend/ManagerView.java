@@ -233,17 +233,20 @@ public class ManagerView extends ListaideView implements ValueChangeListener {
 	private void highlightParent(PlaylistDTO parent) {
 		children.setSelection(Collections.emptySet());
 		inheritanceHighlighting = track -> track.getInheritedFrom().get(parent) == null ? 0 : track.getInheritedFrom().size();
+		tracks.getGrid().getColumn(Tracks.HIGHLIGHT_INDICATOR).setHidden(false);
 		tracks.refreshHighlighting();
 	}
 	
 	private void highlightChild(PlaylistDTO child) {
 		parents.setSelection(Collections.emptySet());
 		inheritanceHighlighting = track -> track.getBequeathedTo().get(child) == null ? 0 : track.getBequeathedTo().size();
+		tracks.getGrid().getColumn(Tracks.HIGHLIGHT_INDICATOR).setHidden(false);
 		tracks.refreshHighlighting();
 	}
 	
 	private void clearHighlighting(PlaylistDTO playlistDTO) {
 		inheritanceHighlighting = null;
+		tracks.getGrid().getColumn(Tracks.HIGHLIGHT_INDICATOR).setHidden(true);
 		tracks.refreshHighlighting();
 	}
 	

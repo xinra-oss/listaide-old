@@ -42,6 +42,9 @@ public class Tracks extends CustomField<List<TrackDTO>> {
 
 	private static final long serialVersionUID = 1L;
 	
+	/** propertyId for the highlight indicator column */
+	public static final String HIGHLIGHT_INDICATOR = "highlightIndicator";
+	
 	public static enum HighlightLevel {
 		NONE("la-highlight-none-symbol", null),
 		SINGLE("la-highlight-single-symbol", "la-highlight-single"),
@@ -149,9 +152,9 @@ public class Tracks extends CustomField<List<TrackDTO>> {
 			}
 		};
 		container.setItemSorter(new DefaultItemSorter(new TrackPropertyComparator()));
-		//wrap into GeneratedPropertyContainer so that the track name can be a link
-		//and to be able to remove properties
+		//wrap container into GeneratedPropertyContainer
 		GeneratedPropertyContainer gpc = new GeneratedPropertyContainer(container);
+		//make track name a link
 		gpc.addGeneratedProperty(TrackDTO.Name, new PropertyValueGenerator<TrackDTO>() {
 			private static final long serialVersionUID = 1L;
 
@@ -172,21 +175,41 @@ public class Tracks extends CustomField<List<TrackDTO>> {
 			}
 			
 		});
+		//add highlight indicator column
+		gpc.addGeneratedProperty(HIGHLIGHT_INDICATOR, new PropertyValueGenerator<String>() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String getValue(Item item, Object itemId, Object propertyId) {
+				//return FontAwesome.CIRCLE.getHtml();
+				//manually add CSS class
+				return "<span class='v-icon la-highlight-indicator' style='font-family: FontAwesome;'>&#xf111;</span>";
+			}
+
+			@Override
+			public Class<String> getType() {
+				return String.class;
+			}
+		});
+		//remove properties that are never displayed
 		gpc.removeContainerProperty(TrackDTO.Url);
 		gpc.removeContainerProperty(TrackDTO.TrackId);
 		gpc.removeContainerProperty(TrackDTO.Id);
 		grid.setContainerDataSource(gpc);
 		
+		grid.getColumn(HIGHLIGHT_INDICATOR).setRenderer(new HtmlRenderer()).setWidth(50).setResizable(false).setHidden(true);
+		grid.getColumn(TrackDTO.Number).setWidth(68);
 		grid.getColumn(TrackDTO.Name).setRenderer(new HtmlRenderer(), new LinkConverter<>(TrackDTO.class, TrackDTO::getName, TrackDTO::getUrl));
 		grid.getColumn(TrackDTO.Artists).setRenderer(new HtmlRenderer(), new MultiLinkConverter<>(ArtistDTO.class, ArtistDTO::getName, ArtistDTO::getUrl));
 		grid.getColumn(TrackDTO.Album).setRenderer(new HtmlRenderer(), new LinkConverter<>(AlbumDTO.class, AlbumDTO::getName, AlbumDTO::getUrl));
 		grid.getColumn(TrackDTO.AddedBy).setRenderer(new HtmlRenderer(), new LinkConverter<>(UserDTO.class, UserDTO::getId, UserDTO::getUrl));
-		grid.getColumn(TrackDTO.AddedAt).setRenderer(new DateRenderer("%tF"));
-		grid.getColumn(TrackDTO.Duration).setConverter(new DurationConverter());
-		grid.getColumn(TrackDTO.InheritedFrom).setRenderer(new ComponentRenderer(), new InheritanceConverter());
-		grid.getColumn(TrackDTO.BequeathedTo).setRenderer(new ComponentRenderer(), new InheritanceConverter());
+		grid.getColumn(TrackDTO.AddedAt).setRenderer(new DateRenderer("%tF")).setWidth(124);
+		grid.getColumn(TrackDTO.Duration).setConverter(new DurationConverter()).setWidth(82);
+		grid.getColumn(TrackDTO.InheritedFrom).setRenderer(new ComponentRenderer(), new InheritanceConverter()).setWidth(86);
+		grid.getColumn(TrackDTO.BequeathedTo).setRenderer(new ComponentRenderer(), new InheritanceConverter()).setWidth(86);
 		
 		grid.setColumnOrder(
+			HIGHLIGHT_INDICATOR,
 			TrackDTO.Number,
 			TrackDTO.Name,
 			TrackDTO.Artists,
@@ -198,6 +221,7 @@ public class Tracks extends CustomField<List<TrackDTO>> {
 			TrackDTO.BequeathedTo
 		);
 		
+		grid.getDefaultHeaderRow().getCell(HIGHLIGHT_INDICATOR).setText(null);
 		grid.getDefaultHeaderRow().getCell(TrackDTO.Number).setHtml(FontAwesome.HASHTAG.getHtml());
 		grid.getDefaultHeaderRow().getCell(TrackDTO.Duration).setHtml(FontAwesome.CLOCK_O.getHtml());
 		grid.getDefaultHeaderRow().getCell(TrackDTO.InheritedFrom).setHtml(FontAwesome.ARROW_UP.getHtml());
