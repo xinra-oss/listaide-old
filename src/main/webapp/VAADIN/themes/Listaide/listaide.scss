@@ -32,24 +32,31 @@
   		color: #464646;
 	}
 	
-	/* inheritance visualization */
-	$inheritance-single-color: #76f27c;
-	$inheritance-multi-color: #eccb65;
+	/* inheritance highlighting */
+	$highlight-single-color: #76f27c;
+	$highlight-multi-color: #eccb65;
 	
-	.v-table-row-la-inheritance-single {
-		background-color: $inheritance-single-color;
+	.v-grid-row.la-highlight-single td {
+		background-color: $highlight-single-color;
 	}
 	
-	.v-table-row-la-inheritance-multi {
-		background-color: $inheritance-multi-color;
+	.v-grid-row.la-highlight-multi td {
+		background-color: $highlight-multi-color;
 	}
 	
-	.la-inheritance-single-symbol .v-icon {
-		color: $inheritance-single-color;
+	.la-highlight-single-symbol .v-icon {
+		color: $highlight-single-color;
 	}
 	
-	.la-inheritance-multi-symbol .v-icon {
-		color: $inheritance-multi-color;
+	.la-highlight-multi-symbol .v-icon {
+		color: $highlight-multi-color;
+	}
+	
+	/* fix link & menubar color inside grid when selected */
+	.v-grid-row-selected > .v-grid-cell {
+		a, .v-menubar-menuitem {
+			color: #C8DBED!important;
+		}
 	}
 	
 }

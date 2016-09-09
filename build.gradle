@@ -69,6 +69,8 @@ dependencies {
 	//downgrade because new version doesn't work (try again after removing spotify api
 	//transitive dependencies)
 	compile group: 'org.hibernate', name: 'hibernate-validator', version: '4.3.2.Final'
+	
+	compile 'de.datenhahn.vaadin:componentrenderer:1.0.2'
 }
 
 dependencyManagement {

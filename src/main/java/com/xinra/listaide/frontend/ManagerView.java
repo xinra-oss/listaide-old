@@ -1,12 +1,10 @@
 package com.xinra.listaide.frontend;
 
-import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
@@ -14,6 +12,7 @@ import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.data.util.BeanItem;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FontAwesome;
+import com.vaadin.shared.ui.grid.HeightMode;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
@@ -21,13 +20,10 @@ import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.Label;
-import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.Notification;
-import com.vaadin.ui.Table;
-import com.vaadin.ui.Table.CellStyleGenerator;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
-import com.xinra.listaide.service.DurationConverter;
+import com.xinra.listaide.frontend.Tracks.HighlightLevel;
 import com.xinra.listaide.service.PlaylistDTO;
 import com.xinra.listaide.service.SpotifyService;
 import com.xinra.listaide.service.TrackDTO;
@@ -37,7 +33,7 @@ import com.xinra.listaide.service.TrackDTO;
  * 
  * @author erikhofer
  */
-public class ManagerView extends ListaideView implements ValueChangeListener, CellStyleGenerator {
+public class ManagerView extends ListaideView implements ValueChangeListener {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -48,10 +44,10 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 	private VerticalLayout rightSideLayout;
 	private BeanFieldGroup<PlaylistDTO> playlistBinding;
 	private Button btnSave;
-	private Table trackTable;
-	private Map<TrackDTO, Object[]> trackItemCache;
-	private Function<TrackDTO, Integer> visualizedInheritance;
-	private Map<Long, TrackDTO> tracks;
+	private Function<TrackDTO, Integer> inheritanceHighlighting;
+	private Tracks tracks;
+	private Tags<PlaylistDTO> parents;
+	private Tags<PlaylistDTO> children;
 
 	public ManagerView(ListaideUI ui) {
 		super(ui);
@@ -131,12 +127,12 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 		Button btnAddParent = new Button("Add", FontAwesome.PLUS);
 		btnAddParent.addClickListener(e -> addParent());
 		btnAddParent.addStyleName(ValoTheme.BUTTON_FRIENDLY);
-		Tags<PlaylistDTO> parents = new Tags.Builder<PlaylistDTO>()
+		parents = new Tags.Builder<PlaylistDTO>()
 				.captionResolver(p -> p.getName())
 				.action("Open", this::open, FontAwesome.ARROW_RIGHT)
 				.action("Remove", this::removeParent, FontAwesome.REMOVE)
-				.selectHandler(this::visualizeParent)
-				.deselectHandler(this::clearVisualization)
+				.selectHandler(this::highlightParent)
+				.deselectHandler(this::clearHighlighting)
 				.append(btnAddParent)
 				.build();
 		playlistBinding.bind(parents, PlaylistDTO.Parents);
@@ -147,12 +143,12 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 		Button btnAddChild = new Button("Add", FontAwesome.PLUS);
 		btnAddChild.addClickListener(e -> addChild());
 		btnAddChild.addStyleName(ValoTheme.BUTTON_FRIENDLY);
-		Tags<PlaylistDTO> children = new Tags.Builder<PlaylistDTO>()
+		children = new Tags.Builder<PlaylistDTO>()
 				.captionResolver(p -> p.getName())
 				.action("Open", this::open, FontAwesome.ARROW_RIGHT)
 				.action("Remove", this::removeChild, FontAwesome.REMOVE)
-				.selectHandler(this::visualizeChild)
-				.deselectHandler(this::clearVisualization)
+				.selectHandler(this::highlightChild)
+				.deselectHandler(this::clearHighlighting)
 				.append(btnAddChild)
 				.build();
 		playlistBinding.bind(children, PlaylistDTO.Children);
@@ -160,38 +156,13 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 		
 		//Tracks
 		playlistLayout.addComponent(new Label("Tracks"));
-		trackItemCache = new HashMap<>();
-		tracks = new HashMap<>();
-		trackTable = new Table();
-		trackTable.addStyleName(ValoTheme.TABLE_COMPACT);
-		trackTable.addStyleName(ValoTheme.TABLE_SMALL);
-		trackTable.setCellStyleGenerator(this);
-		trackTable.addContainerProperty(TrackDTO.Number, Integer.class, null);
-		trackTable.addContainerProperty(TrackDTO.Name, Label.class, null);
-		trackTable.addContainerProperty(TrackDTO.Artists, Label.class, null);
-		trackTable.addContainerProperty(TrackDTO.Album, Label.class, null);
-		trackTable.addContainerProperty(TrackDTO.AddedBy, Label.class, null);
-		trackTable.addContainerProperty(TrackDTO.AddedAt, Date.class, null);
-		trackTable.addContainerProperty(TrackDTO.Duration, Integer.class, null);
-		trackTable.addContainerProperty(TrackDTO.InheritedFrom, MenuBar.class, null);
-		trackTable.addContainerProperty(TrackDTO.BequeathedTo, MenuBar.class, null);
-		trackTable.setConverter(TrackDTO.AddedAt, new DateConverter("yyyy-MM-dd"));
-		trackTable.setConverter(TrackDTO.Duration, new DurationConverter());
-		trackTable.setColumnHeaders(
-			FontAwesome.HASHTAG.getHtml(),
-			"Name",
-			"Artists",
-			"Album",
-			"Added By",
-			"Added At",
-			FontAwesome.CLOCK_O.getHtml(),
-			FontAwesome.ARROW_UP.getHtml(),
-			FontAwesome.ARROW_DOWN.getHtml()
-		);
-		trackTable.setPageLength(16);
-		trackTable.setWidth("1100px");
-		trackTable.sort(new Object[] {TrackDTO.Number}, new boolean[] {true});
-		playlistLayout.addComponent(trackTable);
+		tracks = new Tracks(this::getHighlightLevel);
+		tracks.getGrid().setWidth("100%");
+		tracks.getGrid().setHeightMode(HeightMode.ROW);
+		tracks.getGrid().setHeightByRows(16);
+		tracks.getGrid().sort(TrackDTO.Number);
+		playlistBinding.bind(tracks, PlaylistDTO.Tracks);
+		playlistLayout.addComponent(tracks);
 		
 		//symbol explanations
 		HorizontalLayout symbolLayout = new HorizontalLayout();
@@ -199,9 +170,9 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 		symbolLayout.addComponent(new Label(FontAwesome.ARROW_UP.getHtml() + " Inherited From", ContentMode.HTML));
 		symbolLayout.addComponent(new Label(FontAwesome.ARROW_DOWN.getHtml() + " Bequeathed To", ContentMode.HTML));
 		Label inheritanceSingle = new Label(FontAwesome.CIRCLE.getHtml() + " Inherited/Bequeathed Once", ContentMode.HTML);
-		inheritanceSingle.addStyleName(ListaideTheme.INHERITANCE_SINGLE_SYMBOL);
+		inheritanceSingle.addStyleName(HighlightLevel.SINGLE.getSymbolStyle());
 		Label inheritanceMulti = new Label(FontAwesome.CIRCLE.getHtml() + " Inherited/Bequeathed Multiple Times", ContentMode.HTML);
-		inheritanceMulti.addStyleName(ListaideTheme.INHERITANCE_MULTI_SYMBOL);
+		inheritanceMulti.addStyleName(HighlightLevel.MULTI.getSymbolStyle());
 		symbolLayout.addComponents(inheritanceSingle, inheritanceMulti);
 		playlistLayout.addComponent(symbolLayout);
 		
@@ -225,50 +196,22 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 				currentPlaylist = null;
 			}
 		} else { //show playlist with specified id
-			rightSideLayout.addComponent(playlistLayout);
 			BeanItem<PlaylistDTO> playlistItem = playlistItems.get(playlistId);
+			if(playlistItem == null) {
+				VerticalLayout error = new VerticalLayout();
+				error.setMargin(true);
+				Label errorLabel = new Label("Invalid Playlist ID!");
+				errorLabel.addStyleName(ValoTheme.LABEL_FAILURE);
+				error.addComponent(errorLabel);
+				rightSideLayout.addComponent(error);
+				currentPlaylist = null;
+				return;
+			}
+			rightSideLayout.addComponent(playlistLayout);
 			playlistBinding.setItemDataSource(playlistItem);
 			currentPlaylist = playlistItem.getBean();
-			trackTable.removeAllItems();
-			currentPlaylist.getTracks().forEach(track -> {
-				//Somehow the track object itself can't be used as itemId
-				trackTable.addItem(getTrackItem(track), track.getId());
-			});
-			trackTable.sort();
+			tracks.getGrid().getColumn(TrackDTO.AddedBy).setHidden(!currentPlaylist.getCollaborative());
 		}
-	}
-	
-	private Object[] getTrackItem(TrackDTO trackDTO) {
-		Object[] item = trackItemCache.get(trackDTO);
-		if(item == null) {
-			String artists = trackDTO.getArtists().stream()
-					.map(a -> String.format("<a href='%s' target='_blank'>%s</a>", a.getUrl(), a.getName()))
-					.collect(Collectors.joining(", "));
-			
-			item = new Object[] {
-				trackDTO.getNumber(),
-				Util.createLink(trackDTO.getName(), trackDTO.getUrl()),
-				new Label(artists, ContentMode.HTML),
-				Util.createLink(trackDTO.getAlbum().getName(), trackDTO.getAlbum().getUrl()),
-				Util.createLink(trackDTO.getAddedBy().getId(), trackDTO.getAddedBy().getUrl()),
-				trackDTO.getAddedAt(),
-				trackDTO.getDuration(),
-				getInheritanceCounter(trackDTO.getInheritedFrom()),
-				getInheritanceCounter(trackDTO.getBequeathedTo())
-			};
-			trackItemCache.put(trackDTO, item);
-			tracks.put(trackDTO.getId(), trackDTO);
-		}
-		return item;
-	}
-	
-	private MenuBar getInheritanceCounter(Map<PlaylistDTO, Set<TrackDTO>> inheritance) {
-		MenuBar menu = new MenuBar();
-		menu.addStyleName(ValoTheme.MENUBAR_BORDERLESS);
-		menu.addStyleName(ValoTheme.MENUBAR_SMALL);
-		MenuBar.MenuItem item = menu.addItem(""+inheritance.size(), null);
-		inheritance.forEach((p, t) -> item.addItem(p.getName() + " (" + t.size() + ")",  i -> open(p)));
-		return menu;
 	}
 	
 	private void removeParent(PlaylistDTO parent) {
@@ -287,19 +230,21 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 		
 	}
 	
-	private void visualizeParent(PlaylistDTO parent) {
-		visualizedInheritance = track -> track.getInheritedFrom().get(parent) == null ? 0 : track.getInheritedFrom().size();
-		trackTable.refreshRowCache();
+	private void highlightParent(PlaylistDTO parent) {
+		children.setSelection(Collections.emptySet());
+		inheritanceHighlighting = track -> track.getInheritedFrom().get(parent) == null ? 0 : track.getInheritedFrom().size();
+		tracks.refreshHighlighting();
 	}
 	
-	private void visualizeChild(PlaylistDTO child) {
-		visualizedInheritance = track -> track.getBequeathedTo().get(child) == null ? 0 : track.getBequeathedTo().size();
-		trackTable.refreshRowCache();
+	private void highlightChild(PlaylistDTO child) {
+		parents.setSelection(Collections.emptySet());
+		inheritanceHighlighting = track -> track.getBequeathedTo().get(child) == null ? 0 : track.getBequeathedTo().size();
+		tracks.refreshHighlighting();
 	}
 	
-	private void clearVisualization(PlaylistDTO playlistDTO) {
-		visualizedInheritance = null;
-		trackTable.refreshRowCache();
+	private void clearHighlighting(PlaylistDTO playlistDTO) {
+		inheritanceHighlighting = null;
+		tracks.refreshHighlighting();
 	}
 	
 	/**
@@ -313,17 +258,14 @@ public class ManagerView extends ListaideView implements ValueChangeListener, Ce
 	public void valueChange(ValueChangeEvent event) {
 		Notification.show(""+playlistBinding.isModified());
 	}
-
-	@Override
-	public String getStyle(Table source, Object itemId, Object propertyId) {
-		if(propertyId == null && visualizedInheritance != null) {
-			switch(visualizedInheritance.apply(tracks.get(itemId))) {
-				case 0: return null;
-				case 1: return ListaideTheme.INHERITANCE_SINGLE;
-				default: return ListaideTheme.INHERITANCE_MULTI;
-			}
+	
+	private HighlightLevel getHighlightLevel(TrackDTO track) {
+		if(inheritanceHighlighting == null) return HighlightLevel.NONE;
+		switch(inheritanceHighlighting.apply(track)) {
+			case 0: return HighlightLevel.NONE;
+			case 1: return HighlightLevel.SINGLE;
+			default: return HighlightLevel.MULTI;
 		}
-		return null;
 	}
 
 }
